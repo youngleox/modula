@@ -39,7 +39,7 @@ class Module(torch.nn.Module):
         if other > 0:
             return self @ copy.deepcopy(self) ** (other - 1)
         else:
-            return Identity()
+            return ScalarMultiply(1.0)
 
 
 class CompositeModule(Module):
@@ -127,8 +127,3 @@ class ScalarMultiply(Module):
         self.sensitivity = abs(alpha)
         self.forward = lambda x: alpha * x
         self.initialize = lambda : None
-
-
-class Identity(ScalarMultiply):
-    def __init__(self):
-        super().__init__(alpha=1)

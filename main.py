@@ -1,8 +1,7 @@
 import math
 import torch
 
-from module import Identity as I
-from atomics import Linear, ReLU
+from atomics import Identity, Linear, ReLU
 
 from tqdm.auto import trange
 
@@ -17,7 +16,7 @@ wd = 0.01
 x = torch.randn(32, 8)
 y = torch.randn(32, 8)
 
-block = (1-1/depth) * I() + 1/depth * Linear(width, width) @ (math.sqrt(2) * ReLU())
+block = (1-1/depth) * Identity() + 1/depth * Linear(width, width) @ (math.sqrt(2) * ReLU())
 # block = Linear(width, width) @ (math.sqrt(2) * ReLU())
 net = Linear(8,width) @ block ** depth @ Linear(width, 8)
 print(net)

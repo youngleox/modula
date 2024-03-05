@@ -2,7 +2,15 @@ import math
 import torch
 
 from module import Module
-from module import Identity as I
+
+
+class Identity(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x
+        self.initialize = lambda : None
 
 
 class ReLU(Module):
