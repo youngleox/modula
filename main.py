@@ -1,7 +1,7 @@
 import math
 import torch
 
-from atomics import Identity, Linear, ReLU
+from module.atomics import Identity, Linear, ReLU
 
 from tqdm.auto import trange
 
@@ -9,7 +9,7 @@ steps = 1000
 width = 1024
 depth = 10
 
-init_lr = 1.0
+init_lr = 0.1
 beta = 0.9
 wd = 0.01
 

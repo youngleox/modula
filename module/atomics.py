@@ -1,7 +1,7 @@
 import math
 import torch
 
-from abstract import Module
+from module.abstract import Module
 
 
 class Identity(Module):
@@ -31,6 +31,7 @@ class Linear(Module):
         self.out_features = out_features
         self.in_features = in_features
         self.scale = math.sqrt(out_features / in_features)
+        self.rank = min(out_features, in_features)
 
     def forward(self, x):
         return torch.nn.functional.linear(x, self.weight)
@@ -49,6 +50,7 @@ class Linear(Module):
     @torch.no_grad()
     def update(self, lr, beta, wd):
         self.momentum += (1-beta) * (self.weight.grad - self.momentum)
+        self.momentum -= self.weight * (self.momentum * self.weight).sum(dim=1, keepdim=True) / self.weight.norm(dim=1, keepdim=True)**2
         self.u = self.momentum @ self.u @ self.momentum / self.u.norm()
         self.weight -= lr * self.momentum / self.u.norm().sqrt() * self.scale
-        self.weight *= 1 - lr * wd
+        self.weight *= self.scale * math.sqrt(self.rank) / math.sqrt(self.out_features) / self.weight.norm(dim=1, keepdim=True)
