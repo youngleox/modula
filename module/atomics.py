@@ -1,7 +1,7 @@
 import math
 import torch
 
-from module import Module
+from abstract import Module
 
 
 class Identity(Module):
