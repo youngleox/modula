@@ -50,5 +50,9 @@ class Linear(Module):
     def update(self, lr, beta, wd):
         self.momentum += (1-beta) * (self.weight.grad - self.momentum)
         self.u = self.momentum @ self.u @ self.momentum / self.u.norm()
-        self.weight -= lr * self.momentum / self.u.norm().sqrt() * self.scale
-        self.weight *= 1 - lr * wd
+
+        if (norm := self.u.norm().sqrt()) == 0.0:
+            self.u = torch.randn_like(self.weight[0])
+        else:
+            self.weight -= lr * self.momentum / norm * self.scale
+            self.weight *= 1 - lr * wd
