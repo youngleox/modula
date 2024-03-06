@@ -1,7 +1,7 @@
 import math
 import torch
 
-from atomics import Identity, Linear, ReLU
+from module.atomics import Identity, Linear, ReLU
 
 from tqdm.auto import trange
 
