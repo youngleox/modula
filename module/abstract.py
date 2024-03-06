@@ -31,11 +31,11 @@ class Module(torch.nn.Module):
         return SumModule(self, other)
 
     def __rmul__(self, other):
-        assert other != 0
+        assert other != 0, "cannot multiply a module by zero"
         return ScalarMultiply(other) @ self
 
     def __pow__(self, other):
-        assert other >= 0 and other % 1 == 0
+        assert other >= 0 and other % 1 == 0, "nonnegative integer powers only"
         if other > 0:
             return self @ copy.deepcopy(self) ** (other - 1)
         else:
