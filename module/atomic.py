@@ -22,6 +22,10 @@ class ReLU(Module):
         self.initialize = lambda : None
 
 
+def ScaledReLU():
+    return math.sqrt(2) * ReLU()
+
+
 class Linear(Module):
     def __init__(self, out_features, in_features, mass=1):
         super().__init__()
