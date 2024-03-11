@@ -1,7 +1,9 @@
+import os
 import math
 import torch
 import numpy
 import argparse
+import pickle
 
 from tqdm.auto import trange
 from data.dataset import getIterator
@@ -35,14 +37,11 @@ parser.add_argument('--lr',         type=float, default=0.5  )
 parser.add_argument('--beta',       type=float, default=0.9  )
 parser.add_argument('--wd',         type=float, default=0.01 )
 
-args = parser.parse_args()
 
-torch.manual_seed(args.seed)
-numpy.random.seed(args.seed)
+def evalute(output, data, target):
 
-
-def loss_function(output, target):
-
+    acc = (output.argmax(dim=1) == target).sum() / target.numel()
+    
     if args.loss == 'mse':
         onehot = torch.nn.functional.one_hot(target, num_classes=output.shape[1]).float()
         error = (output - onehot * math.sqrt(output.shape[1])).square().mean(dim=1)
@@ -50,10 +49,16 @@ def loss_function(output, target):
     elif args.loss == 'xent':
         error = - output[range(target.shape[0]),target] + output.logsumexp(dim=1)
 
-    return error.mean()
+    loss = error.mean()
+
+    return loss, acc
 
 
 if __name__ == '__main__':
+    args = parser.parse_args()
+
+    torch.manual_seed(args.seed)
+    numpy.random.seed(args.seed)
 
     _getBatch, input_dim, output_dim = getIterator(dataset="cifar10", batch_size=args.batch_size)
 
@@ -73,43 +78,39 @@ if __name__ == '__main__':
     net.initialize()
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
-    os.makedirs(args.logdir, exist_ok=True)
+    os.makedirs(args.log_dir, exist_ok=True)
     pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
 
     for step in (pbar := trange(args.train_steps)):
 
-        data, target = getBatch(train = True)
-
-        if not args.cpu: data, target = data.cuda(), target.cuda()
-
-        output = net(data)
-        loss = loss_function(output, target)
-        loss.backward()
-
-        net.update(args.lr * (1 - step / args.train_steps), beta=args.beta, wd=args.wd)
-        net.zero_grad()
-
-        acc = (output.argmax(dim=1) == target).sum() / target.numel()
-        pbar.set_description(f"acc: {acc.item():.4f}")
-
-        results["train_loss"].append(loss.item())
-        results["train_acc"].append(acc.item())
-
         if step % args.log_interval == 0:
-            loss = 0
-            acc = 0
+            test_loss = test_acc = 0
             for _ in range(args.test_steps):
                 data, target = getBatch(train = False)
                 if not args.cpu: data, target = data.cuda(), target.cuda()
+                with torch.no_grad(): loss, acc = evalute(net(data), data, target)
 
-                output = net(data)
-                loss += loss_function(output, target)
-                acc += (output.argmax(dim=1) == target).sum() / target.numel()
+                test_loss += loss
+                test_acc += acc
 
-            results["test_loss"].append(loss.item() / args.test_steps)
-            results["test_acc"].append(acc.item() / args.test_steps)
+            results["test_loss"].append(test_loss.item() / args.test_steps)
+            results["test_acc"].append(test_acc.item() / args.test_steps)
 
+        data, target = getBatch(train = True)
+        if not args.cpu: data, target = data.cuda(), target.cuda()
+        train_loss, train_acc = evalute(net(data), data, target)
+
+        train_loss.backward()
+        net.update(args.lr * (1 - step / args.train_steps), beta=args.beta, wd=args.wd)
+        net.zero_grad()
+
+        pbar.set_description(f"train acc: {train_acc.item():.4f}")
+
+        results["train_loss"].append(train_loss.item())
+        results["train_acc"].append(train_acc.item())
+
+        if step % args.log_interval == 0:
             pickle.dump(results, open( os.path.join(args.log_dir, 'results.pickle'), "wb" ) )
             torch.save(net.state_dict(), os.path.join(args.log_dir, 'net.checkpoint'))
 
-            if step > 0 and math.isnan(loss): break
+            if step > 0 and math.isnan(train_loss): break
