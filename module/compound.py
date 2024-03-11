@@ -13,10 +13,10 @@ def MLP(width, depth, input_dim, output_dim):
 
 def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
 	residue = (Linear(width, width) @ ScaledReLU()) ** block_depth
-	block = (1-1/depth) * Identity() + 1/depth * residue
+	block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue
 
 	net = ScaledReLU() @ Linear(width, input_dim)
 	net = block ** num_blocks @ net
 	net = Linear(output_dim, width) @ net
 
-
+	return net

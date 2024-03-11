@@ -1,24 +1,28 @@
 import math
 import torch
 
-from module.atomics import Identity, Linear, ReLU
+from module.compound import MLP, ResMLP
 
 from tqdm.auto import trange
 
 steps = 1000
-width = 1024
-depth = 10
 
-init_lr = 1.0
+width = 1024
+num_blocks = 10
+
+block_depth = 2
+input_dim = 8
+output_dim = 8
+batch_size = 32
+
+init_lr = 0.5
 beta = 0.9
 wd = 0.01
 
-x = torch.randn(32, 8)
-y = torch.randn(32, 8)
+x = torch.randn(batch_size, input_dim)
+y = torch.randn(batch_size, output_dim)
 
-block = (1-1/depth) * Identity() + 1/depth * Linear(width, width) @ (math.sqrt(2) * ReLU())
-# block = Linear(width, width) @ (math.sqrt(2) * ReLU())
-net = Linear(8,width) @ block ** depth @ Linear(width, 8)
+net = ResMLP(width, num_blocks, block_depth, input_dim, output_dim)
 print(net)
 
 net.initialize()
