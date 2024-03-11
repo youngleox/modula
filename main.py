@@ -1,44 +1,37 @@
 import math
 import torch
-
-from module.compound import MLP, ResMLP
-
 from tqdm.auto import trange
 
-steps = 1000
+from data.dataset import getIterator
+from module.compound import MLP, ResMLP
 
-width = 1024
-num_blocks = 10
+if __name__ == '__main__':
 
-block_depth = 2
-input_dim = 8
-output_dim = 8
-batch_size = 32
+    steps = 1000
+    batch_size = 100
 
-init_lr = 0.5
-beta = 0.9
-wd = 0.01
+    getBatch = getIterator(dataset="cifar10", batch_size=batch_size)
+    net = ResMLP(width=1000, num_blocks=10, block_depth=1, input_dim=3072, output_dim=10)
 
-x = torch.randn(batch_size, input_dim)
-y = torch.randn(batch_size, output_dim)
+    net.initialize()
 
-net = ResMLP(width, num_blocks, block_depth, input_dim, output_dim)
-print(net)
+    for i in (pbar := trange(steps)):
+        data, target = getBatch(train = True)
 
-net.initialize()
+        data = data.flatten(start_dim=1)
 
-# net = net.cuda()
-# x = x.cuda()
-# y = y.cuda()
+        onehot = torch.nn.functional.one_hot(target, num_classes=10).float()
+        onehot *= math.sqrt(10)
 
-for i in (pbar := trange(steps)):
-    out = net.forward(x)
-    loss = (out-y).square().mean()
-    loss.backward()
+        out = net.forward(data)
+        loss = (out-onehot).square().mean()
+        loss.backward()
 
-    net.update(init_lr * (1 - i / steps), beta, wd)
-    net.zero_grad()
+        net.update(0.5 * (1 - i / steps), beta=0.9, wd=0.01)
+        net.zero_grad()
+
+        acc = (out.argmax(dim=1) == target).sum() / batch_size
         
-    pbar.set_description(f"loss: {loss.item():.4f}")
+        pbar.set_description(f"acc: {acc.item():.4f}")
 
-print(f"final loss {loss.item()}")
+    print(f"final loss {loss.item()}")
