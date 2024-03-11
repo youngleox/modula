@@ -1,8 +1,7 @@
 import copy
-import torch
 
 
-class Module(torch.nn.Module):
+class Module:
     def __init__(self):
         super().__init__()
         self.mass = None
@@ -15,7 +14,7 @@ class Module(torch.nn.Module):
     def norm(self, w):
         raise NotImplementedError
 
-    def initialize(self):
+    def initialize(self, device):
         raise NotImplementedError
 
     def update(self, lr, beta, wd):
@@ -64,10 +63,10 @@ class CompositeModule(Module):
             c1 = self.mass / self.m1.mass
             return max(c0 * self.m0.norm(w[0]), c1 * self.m1.norm(w[1]))
 
-    def initialize(self):
-        self.m0.initialize()
-        self.m1.initialize()
-        self.weight = torch.nn.ParameterList((self.m0.weight, self.m1.weight))
+    def initialize(self, device):
+        self.m0.initialize(device)
+        self.m1.initialize(device)
+        self.weight = (self.m0.weight, self.m1.weight)
 
     def update(self, lr, beta, wd):
         if self.m0.mass == 0:
@@ -103,10 +102,10 @@ class SumModule(Module):
             c1 = self.mass / self.m1.mass
             return max(c0 * self.m0.norm(w[0]), c1 * self.m1.norm(w[1]))
 
-    def initialize(self):
-        self.m0.initialize()
-        self.m1.initialize()
-        self.weight = torch.nn.ParameterList((self.m0.weight, self.m1.weight))
+    def initialize(self, device):
+        self.m0.initialize(device)
+        self.m1.initialize(device)
+        self.weight = (self.m0.weight, self.m1.weight)
 
     def update(self, lr, beta, wd):
         if self.m0.mass == 0:
@@ -126,4 +125,4 @@ class ScalarMultiply(Module):
         self.mass = 0
         self.sensitivity = abs(alpha)
         self.forward = lambda x: alpha * x
-        self.initialize = lambda : None
+        self.initialize = lambda device: None

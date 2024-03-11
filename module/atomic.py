@@ -10,7 +10,7 @@ class Identity(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x
-        self.initialize = lambda : None
+        self.initialize = lambda device: None
 
 
 class ReLU(Module):
@@ -19,7 +19,7 @@ class ReLU(Module):
         self.mass = 0
         self.sensitivity = 1 / math.sqrt(2)
         self.forward = torch.nn.functional.relu
-        self.initialize = lambda : None
+        self.initialize = lambda device: None
 
 
 def ScaledReLU():
@@ -42,13 +42,13 @@ class Linear(Module):
     def norm(self, w):
         return torch.linalg.norm(w, ord=2) / self.scale
 
-    def initialize(self):
-        self.weight = torch.nn.Parameter(torch.empty((self.out_features, self.in_features))) 
+    def initialize(self, device):
+        self.weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(self.weight)
         self.weight.data *= self.scale
 
-        self.register_buffer("momentum", torch.zeros_like(self.weight))
-        self.register_buffer("u",        torch.randn_like(self.weight[0]))
+        self.momentum = torch.zeros_like(self.weight)
+        self.u = torch.randn_like(self.weight[0])
 
     @torch.no_grad()
     def update(self, lr, beta, wd):
@@ -60,3 +60,5 @@ class Linear(Module):
         else:
             self.weight -= lr * self.momentum / norm * self.scale
             self.weight *= 1 - lr * wd
+
+        self.weight.grad = None

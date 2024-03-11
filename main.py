@@ -38,12 +38,6 @@ parser.add_argument('--lr',         type=float, default=0.5  )
 parser.add_argument('--beta',       type=float, default=0.9  )
 parser.add_argument('--wd',         type=float, default=0.01 )
 
-args = parser.parse_args()
-os.makedirs(args.log_dir, exist_ok=True)
-pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
-for arg in vars(args):
-    print("{: <37} {: <20}".format(arg, getattr(args, arg)))
-
 def evalute(output, data, target):
 
     acc = (output.argmax(dim=1) == target).sum() / target.numel()
@@ -62,6 +56,12 @@ def evalute(output, data, target):
 
 if __name__ == '__main__':
 
+    args = parser.parse_args()
+    os.makedirs(args.log_dir, exist_ok=True)
+    pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
+    for arg in vars(args):
+        print("{: <20} {: <20}".format(arg, getattr(args, arg)))
+
     torch.manual_seed(args.seed)
     numpy.random.seed(args.seed)
 
@@ -78,8 +78,7 @@ if __name__ == '__main__':
             data, target = _getBatch(train)
             return data.flatten(start_dim=1), target
 
-    net.initialize()
-    if not args.cpu: net = net.cuda()
+    net.initialize(device = "cpu" if args.cpu else "cuda")
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
@@ -90,7 +89,7 @@ if __name__ == '__main__':
             for _ in range(args.test_steps):
                 data, target = getBatch(train = False)
                 if not args.cpu: data, target = data.cuda(), target.cuda()
-                with torch.no_grad(): loss, acc = evalute(net(data), data, target)
+                with torch.no_grad(): loss, acc = evalute(net.forward(data), data, target)
 
                 test_loss += loss
                 test_acc += acc
@@ -100,11 +99,10 @@ if __name__ == '__main__':
 
         data, target = getBatch(train = True)
         if not args.cpu: data, target = data.cuda(), target.cuda()
-        train_loss, train_acc = evalute(net(data), data, target)
+        train_loss, train_acc = evalute(net.forward(data), data, target)
 
         train_loss.backward()
         net.update(args.lr * (1 - step / args.train_steps), beta=args.beta, wd=args.wd)
-        net.zero_grad()
 
         pbar.set_description(f"train acc: {train_acc.item():.4f}")
 
@@ -113,6 +111,5 @@ if __name__ == '__main__':
 
         if step % args.log_interval == 0:
             pickle.dump(results, open( os.path.join(args.log_dir, 'results.pickle'), "wb" ) )
-            torch.save(net.state_dict(), os.path.join(args.log_dir, 'net.checkpoint'))
 
             if step > 0 and math.isnan(train_loss): break
