@@ -1,3 +1,4 @@
+import sys
 import os
 import math
 import torch
@@ -37,11 +38,16 @@ parser.add_argument('--lr',         type=float, default=0.5  )
 parser.add_argument('--beta',       type=float, default=0.9  )
 parser.add_argument('--wd',         type=float, default=0.01 )
 
+args = parser.parse_args()
+os.makedirs(args.log_dir, exist_ok=True)
+pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
+for arg in vars(args):
+    print("{: <37} {: <20}".format(arg, getattr(args, arg)))
 
 def evalute(output, data, target):
 
     acc = (output.argmax(dim=1) == target).sum() / target.numel()
-    
+
     if args.loss == 'mse':
         onehot = torch.nn.functional.one_hot(target, num_classes=output.shape[1]).float()
         error = (output - onehot * math.sqrt(output.shape[1])).square().mean(dim=1)
@@ -55,7 +61,6 @@ def evalute(output, data, target):
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
 
     torch.manual_seed(args.seed)
     numpy.random.seed(args.seed)
@@ -73,15 +78,12 @@ if __name__ == '__main__':
             data, target = _getBatch(train)
             return data.flatten(start_dim=1), target
 
+    net.initialize()
     if not args.cpu: net = net.cuda()
 
-    net.initialize()
-
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
-    os.makedirs(args.log_dir, exist_ok=True)
-    pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
 
-    for step in (pbar := trange(args.train_steps)):
+    for step in (pbar := trange(args.train_steps, file=sys.stdout)):
 
         if step % args.log_interval == 0:
             test_loss = test_acc = 0
