@@ -17,6 +17,7 @@ python main.py \
   --arch $ARCH \
   --lr $LR \
   --width $WIDTH \
+  --depth $DEPTH \
   --train_steps $TRAIN_STEPS \
   --log_dir logs/$TAG \
   1> logs/$TAG/out.log \
