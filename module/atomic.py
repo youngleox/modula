@@ -22,6 +22,24 @@ class ReLU(Module):
         self.initialize = lambda device: None
 
 
+class MeanSubtract(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x - x.mean(dim=1, keepdim=True)
+        self.initialize = lambda device: None
+
+
+class Abs(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: torch.abs(x)
+        self.initialize = lambda device: None
+
+
 def ScaledReLU():
     return math.sqrt(2) * ReLU()
 
@@ -38,7 +56,7 @@ class Linear(Module):
 
     def forward(self, x):
         return torch.nn.functional.linear(x, self.weight)
-    
+
     def norm(self, w):
         return torch.linalg.norm(w, ord=2) / self.scale
 
