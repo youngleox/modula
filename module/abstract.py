@@ -24,7 +24,7 @@ class Module:
         return CompositeModule(self, other)
 
     def __add__(self, other):
-        return SumModule(self, other)
+        return Add() @ TupleModule(self, other)
 
     def __rmul__(self, other):
         assert other != 0, "cannot multiply a module by zero"
@@ -67,7 +67,7 @@ class CompositeModule(Module):
             self.m1.update(lr / c1, beta, wd)
 
 
-class SumModule(Module):
+class TupleModule(Module):
     def __init__(self, m0, m1):
         super().__init__()
         self.m0 = m0
@@ -77,7 +77,7 @@ class SumModule(Module):
         self.sensitivity = m0.sensitivity + m1.sensitivity
         
     def forward(self, x):
-        return self.m0.forward(x) + self.m1.forward(x)
+        return (self.m0.forward(x), self.m1.forward(x))
 
     def initialize(self, device):
         self.m0.initialize(device)
@@ -102,4 +102,13 @@ class ScalarMultiply(Module):
         self.mass = 0
         self.sensitivity = abs(alpha)
         self.forward = lambda x: alpha * x
+        self.initialize = lambda device: None
+
+
+class Add(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x[0] + x[1]
         self.initialize = lambda device: None
