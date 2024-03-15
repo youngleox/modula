@@ -13,6 +13,7 @@ from module.compound import MLP, ResMLP
 architectures = ['mlp', 'resmlp']
 datasets      = ['cifar10']
 losses        = ['mse', 'xent']
+optims        = ['mgd', 'adamw']
 
 parser = argparse.ArgumentParser()
 
@@ -33,6 +34,7 @@ parser.add_argument('--blockdepth', type=int,   default=2    )
 parser.add_argument('--width',      type=int,   default=384  )
 
 # training
+parser.add_argument('--optim',      type=str,   default='mgd',      choices=optims)
 parser.add_argument('--loss',       type=str,   default='xent',     choices=losses)
 parser.add_argument('--lr',         type=float, default=0.5  )
 parser.add_argument('--beta',       type=float, default=0.9  )
@@ -91,6 +93,9 @@ if __name__ == '__main__':
 
     net.initialize(device = "cpu" if args.cpu else "cuda")
 
+    if args.optim == "adamw":
+        optim = torch.optim.AdamW(net.parameters, lr=args.lr, betas=(args.beta, 0.999), weight_decay=args.wd)
+
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
     for step in (pbar := trange(args.train_steps + 1, file=sys.stdout)):
@@ -113,7 +118,14 @@ if __name__ == '__main__':
         train_loss, train_acc = evalute(net.forward(data), data, target)
 
         train_loss.backward()
-        net.update(args.lr * (1 - step / args.train_steps), beta=args.beta, wd=args.wd)
+
+        schedule = 1 - step / args.train_steps
+        if args.optim == "mgd":
+            net.update(lr=args.lr*schedule, beta=args.beta, wd=args.wd)
+        else:
+            for g in optim.param_groups: g['lr'] = args.lr*schedule
+            optim.step()
+            optim.zero_grad()
 
         pbar.set_description(f"train acc: {train_acc.item():.4f}")
 
@@ -124,3 +136,5 @@ if __name__ == '__main__':
             pickle.dump(results, open( os.path.join(args.log_dir, 'results.pickle'), "wb" ) )
 
             if step > 0 and math.isnan(train_loss): break
+
+    del _getBatch
