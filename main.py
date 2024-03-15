@@ -67,6 +67,11 @@ if __name__ == '__main__':
 
     _getBatch, input_dim, output_dim = getIterator(dataset="cifar10", batch_size=args.batch_size)
 
+    def getBatch(train):
+        data, target = _getBatch(train)
+        if 'mlp' in args.arch: data = data.flatten(start_dim=1)
+        return data, target
+
     if args.arch == "resmlp":
         net = ResMLP(   width = args.width,
                         num_blocks = args.depth,
@@ -74,15 +79,21 @@ if __name__ == '__main__':
                         input_dim = numpy.prod(input_dim),
                         output_dim = output_dim
                     )
-        def getBatch(train):
-            data, target = _getBatch(train)
-            return data.flatten(start_dim=1), target
+
+    elif args.arch == "mlp":
+        net = MLP(      width = args.width,
+                        depth = args.depth,
+                        input_dim = numpy.prod(input_dim),
+                        output_dim = output_dim
+                    )
+
+    print(net)
 
     net.initialize(device = "cpu" if args.cpu else "cuda")
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
-    for step in (pbar := trange(args.train_steps, file=sys.stdout)):
+    for step in (pbar := trange(args.train_steps + 1, file=sys.stdout)):
 
         if step % args.log_interval == 0:
             test_loss = test_acc = 0
