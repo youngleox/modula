@@ -10,9 +10,6 @@ class Module:
         
     def forward(self, x):
         raise NotImplementedError
-    
-    def norm(self, w):
-        raise NotImplementedError
 
     def initialize(self, device):
         raise NotImplementedError
@@ -52,16 +49,6 @@ class CompositeModule(Module):
         
     def forward(self, x):
         return self.m1.forward(self.m0.forward(x))
-    
-    def norm(self, w):
-        if self.m0.mass == 0:
-            return self.m1.norm(w[1])
-        elif self.m1.mass == 0:
-            return self.m0.norm(w[0]) * self.m1.sensitivity
-        else:
-            c0 = self.mass / self.m0.mass * self.m1.sensitivity
-            c1 = self.mass / self.m1.mass
-            return max(c0 * self.m0.norm(w[0]), c1 * self.m1.norm(w[1]))
 
     def initialize(self, device):
         self.m0.initialize(device)
@@ -91,16 +78,6 @@ class SumModule(Module):
         
     def forward(self, x):
         return self.m0.forward(x) + self.m1.forward(x)
-    
-    def norm(self, w):
-        if self.m0.mass == 0:
-            return self.m1.norm(w[1])
-        elif self.m1.mass == 0:
-            return self.m0.norm(w[0])
-        else:
-            c0 = self.mass / self.m0.mass
-            c1 = self.mass / self.m1.mass
-            return max(c0 * self.m0.norm(w[0]), c1 * self.m1.norm(w[1]))
 
     def initialize(self, device):
         self.m0.initialize(device)

@@ -57,9 +57,6 @@ class Linear(Module):
     def forward(self, x):
         return self.scale * torch.nn.functional.linear(x, self.weight)
 
-    def norm(self, w):
-        return torch.linalg.norm(w, ord=2)
-
     def initialize(self, device):
         self.weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(self.weight)
