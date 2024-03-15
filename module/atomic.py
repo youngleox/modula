@@ -55,15 +55,14 @@ class Linear(Module):
         self.scale = math.sqrt(out_features / in_features)
 
     def forward(self, x):
-        return torch.nn.functional.linear(x, self.weight)
+        return self.scale * torch.nn.functional.linear(x, self.weight)
 
     def norm(self, w):
-        return torch.linalg.norm(w, ord=2) / self.scale
+        return torch.linalg.norm(w, ord=2)
 
     def initialize(self, device):
         self.weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(self.weight)
-        self.weight.data *= self.scale
 
         self.momentum = torch.zeros_like(self.weight)
         self.u = torch.randn_like(self.weight[0])
@@ -76,7 +75,7 @@ class Linear(Module):
         if (norm := self.u.norm().sqrt()) == 0.0:
             self.u = torch.randn_like(self.weight[0])
         else:
-            self.weight -= lr * self.momentum / norm * self.scale
+            self.weight -= lr * self.momentum / norm
             self.weight *= 1 - lr * wd
 
         self.weight.grad = None
