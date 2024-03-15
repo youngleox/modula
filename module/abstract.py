@@ -6,7 +6,7 @@ class Module:
         super().__init__()
         self.mass = None
         self.sensitivity = None
-        self.weight = None
+        self.parameters = []
         
     def forward(self, x):
         raise NotImplementedError
@@ -53,7 +53,7 @@ class CompositeModule(Module):
     def initialize(self, device):
         self.m0.initialize(device)
         self.m1.initialize(device)
-        self.weight = (self.m0.weight, self.m1.weight)
+        self.parameters = self.m0.parameters + self.m1.parameters
 
     def update(self, lr, beta, wd):
         if self.m0.mass == 0:
@@ -82,7 +82,7 @@ class SumModule(Module):
     def initialize(self, device):
         self.m0.initialize(device)
         self.m1.initialize(device)
-        self.weight = (self.m0.weight, self.m1.weight)
+        self.parameters = self.m0.parameters + self.m1.parameters
 
     def update(self, lr, beta, wd):
         if self.m0.mass == 0:

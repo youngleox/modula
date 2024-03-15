@@ -60,6 +60,7 @@ class Linear(Module):
     def initialize(self, device):
         self.weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(self.weight)
+        self.parameters = [self.weight]
 
         self.momentum = torch.zeros_like(self.weight)
         self.u = torch.randn_like(self.weight[0])
