@@ -3,6 +3,13 @@ import torch
 
 from module.abstract import Module
 
+def spectral_norm(p, u, num_steps=1):
+    for _ in range(num_steps):
+        u /= u.norm(dim=0, keepdim=True)
+        v = torch.einsum('ab..., b... -> a...', p, u)
+        u = torch.einsum('a..., ab... -> b...', v, p)
+    return u.norm(dim=0, keepdim=True).sqrt(), u
+
 
 class Identity(Module):
     def __init__(self):
@@ -68,9 +75,9 @@ class Linear(Module):
     @torch.no_grad()
     def update(self, lr, beta, wd):
         self.momentum += (1-beta) * (self.weight.grad - self.momentum)
-        self.u = self.momentum @ self.u @ self.momentum / self.u.norm()
+        norm, self.u.data = spectral_norm(self.momentum, self.u)
 
-        if (norm := self.u.norm().sqrt()) == 0.0:
+        if norm == 0.0:
             self.u = torch.randn_like(self.weight[0])
         else:
             self.weight -= lr * self.momentum / norm
