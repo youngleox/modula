@@ -20,6 +20,15 @@ class Identity(Module):
         self.initialize = lambda device: None
 
 
+class Flatten(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x.flatten(start_dim=1)
+        self.initialize = lambda device: None
+
+
 class ReLU(Module):
     def __init__(self):
         super().__init__()
@@ -86,8 +95,8 @@ class Linear(Module):
         self.weight.grad = None
 
 
-class Conv2d(Module):
-    def __init__(self, out_channels, in_channels, kernel_size, stride=1, padding=0, mass=1):
+class Conv2D(Module):
+    def __init__(self, out_channels, in_channels, kernel_size=3, stride=1, padding=1, mass=1):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1

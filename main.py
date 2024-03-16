@@ -1,5 +1,6 @@
 import sys
 import os
+import signal
 import math
 import torch
 import numpy
@@ -8,9 +9,9 @@ import pickle
 
 from tqdm.auto import trange
 from data.dataset import getIterator
-from module.compound import MLP, ResMLP
+from module.compound import MLP, ResMLP, CNN, ResCNN
 
-architectures = ['mlp', 'resmlp']
+architectures = ['mlp', 'resmlp', 'cnn', 'rescnn']
 datasets      = ['cifar10']
 losses        = ['mse', 'xent']
 optims        = ['mgd', 'adamw']
@@ -69,8 +70,17 @@ if __name__ == '__main__':
 
     _getBatch, input_dim, output_dim = getIterator(dataset="cifar10", batch_size=args.batch_size)
 
+    def cleanup(sig=None, frame=None):
+        global _getBatch
+        del _getBatch
+        print(" Goodbye!")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, cleanup)
+
     def getBatch(train):
         data, target = _getBatch(train)
+        if not args.cpu: data, target = data.cuda(), target.cuda()
         if 'mlp' in args.arch: data = data.flatten(start_dim=1)
         return data, target
 
@@ -89,6 +99,23 @@ if __name__ == '__main__':
                         output_dim = output_dim
                     )
 
+    elif args.arch == "cnn":
+        net = CNN(      width = args.width,
+                        depth = args.depth,
+                        input_dim = input_dim[0],
+                        output_dim = output_dim,
+                        num_pixels = input_dim[1]*input_dim[2]
+                    )
+
+    elif args.arch == "rescnn":
+        net = ResCNN(   width = args.width,
+                        num_blocks = args.depth,
+                        block_depth = args.blockdepth,
+                        input_dim = input_dim[0],
+                        output_dim = output_dim,
+                        num_pixels = input_dim[1]*input_dim[2]
+                    )
+
     print(net)
 
     net.initialize(device = "cpu" if args.cpu else "cuda")
@@ -104,7 +131,6 @@ if __name__ == '__main__':
             test_loss = test_acc = 0
             for _ in range(args.test_steps):
                 data, target = getBatch(train = False)
-                if not args.cpu: data, target = data.cuda(), target.cuda()
                 with torch.no_grad(): loss, acc = evalute(net.forward(data), data, target)
 
                 test_loss += loss
@@ -114,7 +140,6 @@ if __name__ == '__main__':
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
         data, target = getBatch(train = True)
-        if not args.cpu: data, target = data.cuda(), target.cuda()
         train_loss, train_acc = evalute(net.forward(data), data, target)
 
         train_loss.backward()
@@ -127,14 +152,13 @@ if __name__ == '__main__':
             optim.step()
             optim.zero_grad()
 
-        pbar.set_description(f"train acc: {train_acc.item():.4f}")
-
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())
 
         if step % args.log_interval == 0:
             pickle.dump(results, open( os.path.join(args.log_dir, 'results.pickle'), "wb" ) )
+            pbar.set_description(f"train: {numpy.mean(results['train_acc'][-100:]):.4f} // test: {results['test_acc'][-1]:.4f}")
 
             if step > 0 and math.isnan(train_loss): break
 
-    del _getBatch
+    cleanup()
