@@ -3,6 +3,7 @@ from torchvision import datasets, transforms
 
 from data.sampler import RandomSampler
 
+
 def getDataset(dataset):
 
     if dataset == "cifar10":
@@ -32,7 +33,7 @@ def getDataset(dataset):
         return trainset, testset, input_dim, output_dim
 
 
-def getIterator(dataset, batch_size):
+def getIterator(dataset, batch_size, device):
 
     trainset, testset, input_dim, output_dim = getDataset(dataset)
 
@@ -45,6 +46,10 @@ def getIterator(dataset, batch_size):
     train_iterator = iter(train_loader)
     test_iterator  = iter(test_loader)
 
-    getBatch = lambda train: next(train_iterator if train else test_iterator)
+    _getBatch = lambda train: next(train_iterator if train else test_iterator)
+
+    def getBatch(train):
+        data, target = _getBatch(train)
+        return data.to(device), target.to(device)
 
     return getBatch, input_dim, output_dim

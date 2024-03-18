@@ -9,7 +9,7 @@ import pickle
 
 from tqdm.auto import trange
 from data.dataset import getIterator
-from module.compound import MLP, ResMLP, ResCNN
+from module.compound import *
 
 architectures = ['mlp', 'resmlp', 'rescnn']
 datasets      = ['cifar10']
@@ -68,46 +68,26 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     numpy.random.seed(args.seed)
 
-    _getBatch, input_dim, output_dim = getIterator(dataset="cifar10", batch_size=args.batch_size)
+    getBatch, input_dim, output_dim = getIterator(  dataset = "cifar10",
+                                                    batch_size = args.batch_size,
+                                                    device = "cpu" if args.cpu else "cuda" )
 
     def cleanup(sig=None, frame=None):
-        global _getBatch
-        del _getBatch
+        global getBatch
+        del getBatch
         print("Goodbye!")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, cleanup)
 
-    def getBatch(train):
-        data, target = _getBatch(train)
-        if not args.cpu: data, target = data.cuda(), target.cuda()
-        if 'mlp' in args.arch: data = data.flatten(start_dim=1)
-        return data, target
-
     if args.arch == "resmlp":
-        net = ResMLP(   width = args.width,
-                        num_blocks = args.depth,
-                        block_depth = args.blockdepth,
-                        input_dim = numpy.prod(input_dim),
-                        output_dim = output_dim
-                    )
+        net = ResMLP(args, input_dim, output_dim)
 
     elif args.arch == "mlp":
-        net = MLP(      width = args.width,
-                        depth = args.depth,
-                        input_dim = numpy.prod(input_dim),
-                        output_dim = output_dim
-                    )
-
+        net = MLP(args, input_dim, output_dim)
 
     elif args.arch == "rescnn":
-        net = ResCNN(   width = args.width,
-                        num_blocks = args.depth,
-                        block_depth = args.blockdepth,
-                        input_dim = input_dim[0],
-                        output_dim = output_dim,
-                        num_pixels = input_dim[1]*input_dim[2]
-                    )
+        net = ResCNN(args, input_dim, output_dim)
 
     print(net)
 
