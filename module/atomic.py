@@ -3,13 +3,6 @@ import torch
 
 from module.abstract import Module
 
-def spectral_norm(p, u, num_steps=1):
-    for _ in range(num_steps):
-        u /= u.norm(dim=0, keepdim=True)
-        v = torch.einsum('ab..., b... -> a...', p, u)
-        u = torch.einsum('a..., ab... -> b...', v, p)
-    return u.norm(dim=0, keepdim=True).sqrt(), u
-
 
 class Identity(Module):
     def __init__(self):
@@ -29,6 +22,15 @@ class Flatten(Module):
         self.initialize = lambda device: None
 
 
+class Abs(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: torch.abs(x)
+        self.initialize = lambda device: None
+
+
 class ReLU(Module):
     def __init__(self):
         super().__init__()
@@ -36,6 +38,10 @@ class ReLU(Module):
         self.sensitivity = 1 / math.sqrt(2)
         self.forward = torch.nn.functional.relu
         self.initialize = lambda device: None
+
+
+def ScaledReLU():
+    return math.sqrt(2) * ReLU()
 
 
 class MeanSubtract(Module):
@@ -60,15 +66,6 @@ def LayerNorm():
     return RMSDivide() @ MeanSubtract()
 
 
-class Abs(Module):
-    def __init__(self):
-        super().__init__()
-        self.mass = 0
-        self.sensitivity = 1
-        self.forward = lambda x: torch.abs(x)
-        self.initialize = lambda device: None
-
-
 class AvgPool(Module):
     def __init__(self, output_size = (1,1)):
         super().__init__()
@@ -78,8 +75,12 @@ class AvgPool(Module):
         self.initialize = lambda device: None
 
 
-def ScaledReLU():
-    return math.sqrt(2) * ReLU()
+def spectral_norm(p, u, num_steps=1):
+    for _ in range(num_steps):
+        u /= u.norm(dim=0, keepdim=True)
+        v = torch.einsum('ab..., b... -> a...', p, u)
+        u = torch.einsum('a..., ab... -> b...', v, p)
+    return u.norm(dim=0, keepdim=True).sqrt(), u
 
 
 class Linear(Module):

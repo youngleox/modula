@@ -73,7 +73,7 @@ if __name__ == '__main__':
     def cleanup(sig=None, frame=None):
         global _getBatch
         del _getBatch
-        print(" Goodbye!")
+        print("Goodbye!")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, cleanup)
