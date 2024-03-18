@@ -9,9 +9,9 @@ import pickle
 
 from tqdm.auto import trange
 from data.dataset import getIterator
-from module.compound import MLP, ResMLP, CNN, ResCNN
+from module.compound import MLP, ResMLP, ResCNN
 
-architectures = ['mlp', 'resmlp', 'cnn', 'rescnn']
+architectures = ['mlp', 'resmlp', 'rescnn']
 datasets      = ['cifar10']
 losses        = ['mse', 'xent']
 optims        = ['mgd', 'adamw']
@@ -99,13 +99,6 @@ if __name__ == '__main__':
                         output_dim = output_dim
                     )
 
-    elif args.arch == "cnn":
-        net = CNN(      width = args.width,
-                        depth = args.depth,
-                        input_dim = input_dim[0],
-                        output_dim = output_dim,
-                        num_pixels = input_dim[1]*input_dim[2]
-                    )
 
     elif args.arch == "rescnn":
         net = ResCNN(   width = args.width,

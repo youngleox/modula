@@ -1,4 +1,4 @@
-from module.atomic import Identity, Linear, ScaledReLU, MeanSubtract, Abs, Conv2D, Flatten
+from module.atomic import *
 
 
 def MLP(width, depth, input_dim, output_dim):
@@ -22,26 +22,26 @@ def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
 	return net
 
 
-def CNN(width, depth, input_dim, output_dim, num_pixels):
-	initial = Conv2D(width, input_dim)
-	block = ScaledReLU() @ Conv2D(width, width)
-	downscale = Conv2D(1, width)
-	final = Linear(output_dim, num_pixels)
-
-	net = final @ Flatten() @ downscale @ block ** depth @ initial
-
-	return net
-
-
 def ResCNN(width, num_blocks, block_depth, input_dim, output_dim, num_pixels):
-	initial = Conv2D(width, input_dim)
+	net = Conv2D(width, input_dim)
 
-	residue = (MeanSubtract() @ Abs() @ Conv2D(width, width)) ** block_depth
-	block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue
+	residue = (MeanSubtract() @ Abs() @ Conv2D(width, width) @ LayerNorm()) ** block_depth
+	block = 1/2 * Identity() + 1/2 * residue
+	net = block**2 @ net
 
-	downscale = Conv2D(1, width)
-	final = Linear(output_dim, num_pixels)
+	for _ in range(3):
+		residue = MeanSubtract() @ Abs() @ Conv2D(2*width, width, stride = 2)  @ LayerNorm()
+		residue = MeanSubtract() @ Abs() @ Conv2D(2*width, 2*width) @ LayerNorm() @ residue
+		skip = Conv2D(2*width, width, kernel_size = 1, stride = 2, padding = 0)  @ LayerNorm()
+		block_1 = 1/2 * skip + 1/2 * residue
 
-	net = final @ Flatten() @ downscale @ block ** num_blocks @ initial
+		residue = (MeanSubtract() @ Abs() @ Conv2D(2*width, 2*width) @ LayerNorm())**2
+		block_2 = 1/2 * Identity() + 1/2 * residue
+
+		net = block_2 @ block_1 @ net
+		width *= 2
+
+	final = Linear(output_dim, width) @ Flatten() @ AvgPool()
+	net = final @ net
 
 	return net

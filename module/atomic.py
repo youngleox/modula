@@ -47,12 +47,34 @@ class MeanSubtract(Module):
         self.initialize = lambda device: None
 
 
+class RMSDivide(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x / x.norm(dim=1, keepdim=True)
+        self.initialize = lambda device: None
+
+
+def LayerNorm():
+    return RMSDivide() @ MeanSubtract()
+
+
 class Abs(Module):
     def __init__(self):
         super().__init__()
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: torch.abs(x)
+        self.initialize = lambda device: None
+
+
+class AvgPool(Module):
+    def __init__(self, output_size = (1,1)):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: torch.nn.functional.adaptive_avg_pool2d(x, output_size)
         self.initialize = lambda device: None
 
 
