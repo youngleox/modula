@@ -43,7 +43,7 @@ class MeanSubtract(Module):
         super().__init__()
         self.mass = 0
         self.sensitivity = 1
-        self.forward = lambda x: x - x.mean(dim=1, keepdim=True)
+        self.forward = lambda x: x - x.mean(dim=tuple(range(1,x.dim())), keepdim=True)
         self.initialize = lambda device: None
 
 
@@ -52,7 +52,7 @@ class RMSDivide(Module):
         super().__init__()
         self.mass = 0
         self.sensitivity = 1
-        self.forward = lambda x: x / x.norm(dim=1, keepdim=True)
+        self.forward = lambda x: x / x.square().mean(dim=tuple(range(1,x.dim())), keepdim=True).sqrt()
         self.initialize = lambda device: None
 
 
