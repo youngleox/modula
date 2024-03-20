@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
         schedule = 1 - step / args.train_steps
         if args.optim == "mgd":
-            net.update(lr=args.lr*schedule, beta=args.beta, wd=args.wd)
+            net.update(lr=args.lr*schedule, hps={"beta":args.beta, "wd":args.wd})
         else:
             for g in optim.param_groups: g['lr'] = args.lr*schedule
             optim.step()

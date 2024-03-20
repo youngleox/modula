@@ -105,15 +105,15 @@ class Linear(Module):
         self.u = torch.randn_like(self.weight[0])
 
     @torch.no_grad()
-    def update(self, lr, beta, wd):
-        self.momentum += (1-beta) * (self.weight.grad - self.momentum)
+    def update(self, lr, hps):
+        self.momentum += (1-hps["beta"]) * (self.weight.grad - self.momentum)
         norm, self.u.data = spectral_norm(self.momentum, self.u)
 
         if norm == 0.0:
             self.u = torch.randn_like(self.weight[0])
         else:
             self.weight -= lr * self.momentum / norm
-            self.weight *= 1 - lr * wd
+            self.weight *= 1 - lr * hps["wd"]
 
         self.weight.grad = None
 
@@ -145,14 +145,14 @@ class Conv2D(Module):
         self.u = torch.randn_like(self.weight[0])
 
     @torch.no_grad()
-    def update(self, lr, beta, wd):
-        self.momentum += (1-beta) * (self.weight.grad - self.momentum)
+    def update(self, lr, hps):
+        self.momentum += (1-hps["beta"]) * (self.weight.grad - self.momentum)
         norm, self.u.data = spectral_norm(self.momentum, self.u)
 
         if (norm == 0.0).any():
             self.u = torch.randn_like(self.weight[0])
         else:
             self.weight -= lr * self.momentum / norm
-            self.weight *= 1 - lr * wd
+            self.weight *= 1 - lr * hps["wd"]
 
         self.weight.grad = None

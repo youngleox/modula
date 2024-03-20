@@ -14,7 +14,7 @@ class Module:
     def initialize(self, device):
         raise NotImplementedError
 
-    def update(self, lr, beta, wd):
+    def update(self, lr, hps):
         raise NotImplementedError
 
     def __str__(self):
@@ -55,7 +55,7 @@ class CompositeModule(Module):
         self.m1.initialize(device)
         self.parameters = self.m0.parameters + self.m1.parameters
 
-    def update(self, lr, beta, wd):
+    def update(self, lr, hps):
         if self.m0.mass == 0:
             self.m1.update(lr, beta, wd)
         elif self.m1.mass == 0:
@@ -63,8 +63,8 @@ class CompositeModule(Module):
         else:
             c0 = self.mass / self.m0.mass * self.m1.sensitivity
             c1 = self.mass / self.m1.mass
-            self.m0.update(lr / c0, beta, wd)
-            self.m1.update(lr / c1, beta, wd)
+            self.m0.update(lr / c0, hps)
+            self.m1.update(lr / c1, hps)
 
 
 class TupleModule(Module):
@@ -92,8 +92,8 @@ class TupleModule(Module):
         else:
             c0 = self.mass / self.m0.mass
             c1 = self.mass / self.m1.mass
-            self.m0.update(lr / c0, beta, wd)
-            self.m1.update(lr / c1, beta, wd)
+            self.m0.update(lr / c0, hps)
+            self.m1.update(lr / c1, hps)
 
 
 class ScalarMultiply(Module):
