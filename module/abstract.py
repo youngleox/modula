@@ -57,9 +57,9 @@ class CompositeModule(Module):
 
     def update(self, lr, hps):
         if self.m0.mass == 0:
-            self.m1.update(lr, beta, wd)
+            self.m1.update(lr, hps)
         elif self.m1.mass == 0:
-            self.m0.update(lr / self.m1.sensitivity, beta, wd)
+            self.m0.update(lr / self.m1.sensitivity, hps)
         else:
             c0 = self.mass / self.m0.mass * self.m1.sensitivity
             c1 = self.mass / self.m1.mass
@@ -84,11 +84,11 @@ class TupleModule(Module):
         self.m1.initialize(device)
         self.parameters = self.m0.parameters + self.m1.parameters
 
-    def update(self, lr, beta, wd):
+    def update(self, lr, hps):
         if self.m0.mass == 0:
-            self.m1.update(lr, beta, wd)
+            self.m1.update(lr, hps)
         elif self.m1.mass == 0:
-            self.m0.update(lr, beta, wd)
+            self.m0.update(lr, hps)
         else:
             c0 = self.mass / self.m0.mass
             c1 = self.mass / self.m1.mass
