@@ -17,6 +17,12 @@ class Module:
     def update(self, lr, hps):
         raise NotImplementedError
 
+    def tare(self, absolute=1, relative=None):
+        if relative is not None:
+            self.mass *= relative
+        else:
+            self.mass = absolute
+
     def __str__(self):
         return f"Module of mass {self.mass} and sensitivity {self.sensitivity}."
 
@@ -66,6 +72,14 @@ class CompositeModule(Module):
             self.m0.update(lr / c0, hps)
             self.m1.update(lr / c1, hps)
 
+    def tare(self, absolute=1, relative=None):
+        if relative is not None:
+            self.mass *= relative
+            self.m0.tare(relative = relative)
+            self.m1.tare(relative = relative)
+        else:
+            self.tare(relative = absolute / self.mass)
+
 
 class TupleModule(Module):
     def __init__(self, m0, m1):
@@ -94,6 +108,14 @@ class TupleModule(Module):
             c1 = self.mass / self.m1.mass
             self.m0.update(lr / c0, hps)
             self.m1.update(lr / c1, hps)
+
+    def tare(self, absolute=1, relative=None):
+        if relative is not None:
+            self.mass *= relative
+            self.m0.tare(relative = relative)
+            self.m1.tare(relative = relative)
+        else:
+            self.tare(relative = absolute / self.mass)
 
 
 class ScalarMultiply(Module):
