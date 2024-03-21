@@ -68,7 +68,7 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     numpy.random.seed(args.seed)
 
-    getBatch, input_dim, output_dim = getIterator(  dataset = "cifar10",
+    getBatch, input_dim, output_dim = getIterator(  dataset = args.dataset,
                                                     batch_size = args.batch_size,
                                                     device = "cpu" if args.cpu else "cuda" )
 

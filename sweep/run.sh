@@ -14,11 +14,21 @@ module load cuda/11.8
 export OMP_NUM_THREADS=20
 
 python main.py \
-  --arch $ARCH \
-  --lr $LR \
-  --width $WIDTH \
-  --depth $DEPTH \
-  --train_steps $TRAIN_STEPS \
   --log_dir logs/$TAG \
+  --log_interval $LOG_INTERVAL \
+  --seed $SEED \
+  --batch_size $BATCH_SIZE \
+  --train_steps $TRAIN_STEPS \
+  --test_steps $TEST_STEPS \
+  --dataset $DATASET \
+  --arch $ARCH \
+  --depth $DEPTH \
+  --blockdepth $BLOCKDEPTH \
+  --width $WIDTH \
+  --optim $OPTIM \
+  --loss $LOSS \
+  --lr $LR \
+  --beta $BETA \
+  --wd $WD \
   1> logs/$TAG/out.log \
   2> logs/$TAG/err.log
