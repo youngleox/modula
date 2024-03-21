@@ -24,13 +24,10 @@ def ResMLP(args, input_dim, output_dim):
 
 	residue = (MeanSubtract() @ Abs() @ Linear(width, width)) ** block_depth
 	block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue
+	blocks = block ** num_blocks
+	blocks.tare()
 
-	net = Linear(width, input_dim) @ Flatten()
-	net = block ** num_blocks @ net
-	net = Linear(output_dim, width) @ net
-
-	return net
-
+	return Linear(output_dim, width) @ blocks @ Linear(width, input_dim) @ Flatten()
 
 def ResCNN(args, input_dim, output_dim):
 	width = args.width
