@@ -22,7 +22,7 @@ def ResMLP(args, input_dim, output_dim):
 	num_blocks = args.depth
 	block_depth = args.blockdepth
 
-	residue = (MeanSubtract() @ Abs() @ Linear(width, width)) ** block_depth
+	residue = (MeanSubtract() @ Abs() @ Linear(width, width) @ RMSDivide()) ** block_depth
 	block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue
 	blocks = block ** num_blocks
 	blocks.tare()
