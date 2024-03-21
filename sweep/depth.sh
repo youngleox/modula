@@ -1,6 +1,6 @@
-for DEPTH in 1 2 4 8 16 32 64 128 256 512; do
+for DEPTH in 2 4 8 16 32 64 128; do
 for LR in 0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0; do
-     export TAG=sweep-depth-abs/$DEPTH/$LR
+     export TAG=resmlp_depth_sweep/$DEPTH/$LR
      export LOG_INTERVAL=100
      export SEED=0
      export BATCH_SIZE=128
@@ -10,7 +10,7 @@ for LR in 0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0; do
      export ARCH=resmlp
      export DEPTH=$DEPTH
      export BLOCKDEPTH=2
-     export WIDTH=512
+     export WIDTH=128
      export OPTIM=mgd
      export LOSS=xent
      export LR=$LR
