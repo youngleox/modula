@@ -23,6 +23,9 @@ class Module:
         else:
             self.mass = absolute
 
+    def print_submodules(self):
+        pass
+
     def __str__(self):
         return f"Module of mass {self.mass} and sensitivity {self.sensitivity}."
 
@@ -80,6 +83,10 @@ class CompositeModule(Module):
         else:
             self.tare(relative = absolute / self.mass)
 
+    def print_submodules(self):
+        self.m0.print_submodules()
+        self.m1.print_submodules()
+
 
 class TupleModule(Module):
     def __init__(self, m0, m1):
@@ -116,6 +123,10 @@ class TupleModule(Module):
             self.m1.tare(relative = relative)
         else:
             self.tare(relative = absolute / self.mass)
+
+    def print_submodules(self):
+        self.m0.print_submodules()
+        self.m1.print_submodules()
 
 
 class ScalarMultiply(Module):

@@ -117,6 +117,9 @@ class Linear(Module):
 
         self.weight.grad = None
 
+    def print_submodules(self):
+        print(f"Linear module of shape {(self.out_features, self.in_features)} and mass {self.mass}.")
+
 
 class Conv2D(Module):
     def __init__(self, out_channels, in_channels, kernel_size=3, stride=1, padding=1, mass=1):
@@ -156,3 +159,6 @@ class Conv2D(Module):
             self.weight *= 1 - lr * hps["wd"]
 
         self.weight.grad = None
+
+    def print_submodules(self):
+        print(f"Conv2D module of shape {(self.out_features, self.in_features, self.k, self.k)} and mass {self.mass}.")
