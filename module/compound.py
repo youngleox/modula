@@ -3,7 +3,7 @@ import numpy
 
 
 def residualize(residue, num_blocks, block_depth):
-	assert args.num_blocks > 1, "need at least two blocks"
+	assert num_blocks > 1, "need at least two blocks"
 
 	block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue ** block_depth
 

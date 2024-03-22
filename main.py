@@ -29,7 +29,7 @@ parser.add_argument('--test_steps',     type=int,   default=100  )
 parser.add_argument('--dataset',        type=str,   default='cifar10',  choices=datasets)
 
 # architecture
-parser.add_argument('--arch',           type=str,   default='mlp',      choices=architectures)
+parser.add_argument('--arch',           type=str,   default='resmlp',   choices=architectures)
 parser.add_argument('--depth',          type=int,   default=6    )
 parser.add_argument('--block_depth',    type=int,   default=2    )
 parser.add_argument('--width',          type=int,   default=384  )
