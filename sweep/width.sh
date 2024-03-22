@@ -9,7 +9,7 @@ for LR in 0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0; do
      export DATASET=cifar10
      export ARCH=resmlp
      export DEPTH=3
-     export BLOCKDEPTH=2
+     export BLOCK_DEPTH=2
      export WIDTH=$WIDTH
      export OPTIM=mgd
      export LOSS=xent

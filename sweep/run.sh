@@ -23,7 +23,7 @@ python main.py \
   --dataset $DATASET \
   --arch $ARCH \
   --depth $DEPTH \
-  --blockdepth $BLOCKDEPTH \
+  --block_depth $BLOCK_DEPTH \
   --width $WIDTH \
   --optim $OPTIM \
   --loss $LOSS \

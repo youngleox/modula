@@ -11,7 +11,7 @@ from tqdm.auto import trange
 from data.dataset import getIterator
 from module.compound import *
 
-architectures = ['mlp', 'resmlp', 'rescnn']
+architectures = ['resmlp', 'rescnn']
 datasets      = ['cifar10']
 losses        = ['mse', 'xent']
 optims        = ['mgd', 'adamw']
@@ -29,17 +29,17 @@ parser.add_argument('--test_steps',     type=int,   default=100  )
 parser.add_argument('--dataset',        type=str,   default='cifar10',  choices=datasets)
 
 # architecture
-parser.add_argument('--arch',       type=str,   default='mlp',      choices=architectures)
-parser.add_argument('--depth',      type=int,   default=6    )
-parser.add_argument('--blockdepth', type=int,   default=2    )
-parser.add_argument('--width',      type=int,   default=384  )
+parser.add_argument('--arch',           type=str,   default='mlp',      choices=architectures)
+parser.add_argument('--depth',          type=int,   default=6    )
+parser.add_argument('--block_depth',    type=int,   default=2    )
+parser.add_argument('--width',          type=int,   default=384  )
 
 # training
-parser.add_argument('--optim',      type=str,   default='mgd',      choices=optims)
-parser.add_argument('--loss',       type=str,   default='xent',     choices=losses)
-parser.add_argument('--lr',         type=float, default=0.5  )
-parser.add_argument('--beta',       type=float, default=0.9  )
-parser.add_argument('--wd',         type=float, default=0.01 )
+parser.add_argument('--optim',          type=str,   default='mgd',      choices=optims)
+parser.add_argument('--loss',           type=str,   default='xent',     choices=losses)
+parser.add_argument('--lr',             type=float, default=0.5  )
+parser.add_argument('--beta',           type=float, default=0.9  )
+parser.add_argument('--wd',             type=float, default=0.01 )
 
 def evalute(output, data, target):
 
@@ -81,13 +81,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, cleanup)
 
     if args.arch == "resmlp":
-        net = ResMLP(args, input_dim, output_dim)
-
-    elif args.arch == "mlp":
-        net = MLP(args, input_dim, output_dim)
+        net = ResMLP(args.width, args.depth, args.block_depth, input_dim, output_dim)
 
     elif args.arch == "rescnn":
-        net = ResCNN(args, input_dim, output_dim)
+        net = ResCNN(args.width, args.depth, args.block_depth, input_dim, output_dim)
 
     print(net)
 
