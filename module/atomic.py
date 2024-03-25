@@ -220,19 +220,10 @@ class Attention(Module):
         self.causal = causal
 
     def forward(self, x):
-        ''' For einsum adopt notation:
-                b = batch_size
-                h = num_heads
-                q = d_query
-                v = d_value
-                d = d_embed
-                c = context
-        '''
         q = torch.einsum('qdh, bcd -> bhcq', self.Q, x) * math.sqrt(self.d_query / self.d_embed)
         k = torch.einsum('qdh, bcd -> bhcq', self.K, x) * math.sqrt(self.d_query / self.d_embed)
         v = torch.einsum('vdh, bcd -> bhcv', self.V, x) * math.sqrt(self.d_value / self.d_embed)
 
-        # TODO: check scaling factor (/ self.d_query)
         att = torch.einsum('bhcq, bhCq -> bhcC', q, k) / self.d_query
         if self.causal:
             T = x.size()[1]
@@ -241,8 +232,6 @@ class Attention(Module):
         p = torch.nn.functional.softmax(att, dim=-1)
         y = torch.einsum('bhcC, bhCv -> bhcv', p, v)
         z = torch.einsum('dvh, bhcv -> bcd', self.W, y) * math.sqrt(self.d_embed / self.d_value) / self.num_heads
-
-        # TODO: check contiguous memory
 
         return z
 
@@ -262,17 +251,19 @@ class Attention(Module):
             T = self.context
             self.mask = torch.tril(torch.ones(T, T)).view(1, 1, T, T)
 
-        self.us = [torch.randn_like(M[0]) for M in self.parameters]
+        self.us   = [torch.randn_like(M[0]) for M in self.parameters]
+        self.moms = [torch.zeros_like(M)    for M in self.parameters]
 
     @torch.no_grad()
     def update(self, lr, hps):
-        for M, u in zip(self.parameters, self.us):
-            norm, u.data = spectral_norm(M.grad, u)
+        for M, u, mom in zip(self.parameters, self.us, self.moms):
+            mom += (1-hps["beta"]) * (M.grad - mom)
+            norm, u.data = spectral_norm(mom, u)
 
             if (norm == 0.0).any():
                 u.data = torch.randn_like(M[0])
             else:
-                M -= lr / 4 * M.grad / norm
+                M -= lr / 4 * mom / norm
                 M *= 1 - lr * hps["wd"]
 
             M.grad = None

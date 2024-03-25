@@ -1,4 +1,9 @@
+import os
+import pickle
+import requests
+import numpy as np
 import torch
+
 from torchvision import datasets, transforms
 
 from data.sampler import RandomSampler
@@ -32,24 +37,49 @@ def getDataset(dataset):
         
         return trainset, testset, input_dim, output_dim
 
+    elif dataset == "shakespeare":
 
-def getIterator(dataset, batch_size, device):
+        if not os.path.exists('data/shakespeare/train.bin'):
+            exec(open('data/shakespeare.py').read())
+
+        trainset = np.memmap('data/shakespeare/train.bin', dtype=np.uint16, mode='r')
+        testset  = np.memmap('data/shakespeare/val.bin',   dtype=np.uint16, mode='r')
+
+        vocab_size = 65
+
+        return trainset, testset, vocab_size, None
+
+
+def getIterator(dataset, device, batch_size, context=None):
 
     trainset, testset, input_dim, output_dim = getDataset(dataset)
 
-    train_sampler = RandomSampler(trainset, batch_size)
-    test_sampler = RandomSampler(testset, batch_size)
+    if dataset == 'cifar10':
 
-    train_loader = torch.utils.data.DataLoader( trainset, num_workers=8, pin_memory=True, batch_sampler=train_sampler)
-    test_loader = torch.utils.data.DataLoader(  testset,  num_workers=8, pin_memory=True, batch_sampler=test_sampler)
+        train_sampler = RandomSampler(trainset, batch_size)
+        test_sampler = RandomSampler(testset, batch_size)
 
-    train_iterator = iter(train_loader)
-    test_iterator  = iter(test_loader)
+        train_loader = torch.utils.data.DataLoader( trainset, num_workers=8, pin_memory=True, batch_sampler=train_sampler)
+        test_loader = torch.utils.data.DataLoader(  testset,  num_workers=8, pin_memory=True, batch_sampler=test_sampler)
 
-    _getBatch = lambda train: next(train_iterator if train else test_iterator)
+        train_iterator = iter(train_loader)
+        test_iterator  = iter(test_loader)
+
+        _getBatch = lambda train: next(train_iterator if train else test_iterator)
+
+    elif dataset == 'shakespeare':
+
+        def _getBatch(train):
+            data = trainset if train else testset
+            ix = torch.randint(len(data) - context, (batch_size,))
+            x = torch.stack([torch.from_numpy((data[i:i+context]).astype(np.int64)) for i in ix])
+            y = torch.stack([torch.from_numpy((data[i+1:i+1+context]).astype(np.int64)) for i in ix])
+            if device != "cpu":
+                x, y = x.pin_memory(), y.pin_memory()
+            return x, y
 
     def getBatch(train):
         data, target = _getBatch(train)
-        return data.to(device), target.to(device)
+        return data.to(device, non_blocking=True), target.to(device, non_blocking=True)
 
     return getBatch, input_dim, output_dim
