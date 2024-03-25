@@ -32,3 +32,19 @@ def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
 	final = Linear(output_dim, width) @ Flatten() @ AvgPool()
 
 	return final @ blocks @ initial
+
+
+def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
+	token_embedding = Embedding(vocab_size, d_embed)
+	position_embedding = Embedding(context, d_embed) @ Enumerate()
+	initial = 1/2 * token_embedding + 1/2 * position_embedding
+
+	mlp = Linear(d_embed, 4*d_embed) @ MeanSubtract() @ Abs() @ Linear(4*d_embed, d_embed)
+	attention = Attention(num_heads, d_embed, d_query, d_value, context, causal=True)
+	residue = MeanSubtract() @ (1/2 * mlp + 1/2 * attention) @ RMSDivide()
+	blocks = residualize(residue, num_blocks, block_depth=1)
+	blocks.tare()
+
+	final = Linear(vocab_size, d_embed) @ RMSDivide()
+
+	return final @ blocks @ initial
