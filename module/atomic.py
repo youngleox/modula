@@ -249,7 +249,7 @@ class Attention(Module):
 
         if self.causal:
             T = self.context
-            self.mask = torch.tril(torch.ones(T, T)).view(1, 1, T, T)
+            self.mask = torch.tril(torch.ones(T, T, device=device)).view(1, 1, T, T)
 
         self.us   = [torch.randn_like(M[0]) for M in self.parameters]
         self.moms = [torch.zeros_like(M)    for M in self.parameters]
