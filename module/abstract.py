@@ -7,6 +7,7 @@ class Module:
         self.mass = None
         self.sensitivity = None
         self.parameters = []
+        self.m0, self.m1 = None, None
         
     def forward(self, x):
         raise NotImplementedError
@@ -20,11 +21,14 @@ class Module:
     def tare(self, absolute=1, relative=None):
         if relative is not None:
             self.mass *= relative
+            if self.m0 is not None: self.m0.tare(relative = relative)
+            if self.m1 is not None: self.m1.tare(relative = relative)
         else:
-            self.mass = absolute
+            self.tare(relative = absolute / self.mass)
 
     def print_submodules(self):
-        pass
+        if self.m0 is not None: self.m0.print_submodules()
+        if self.m1 is not None: self.m1.print_submodules()
 
     def __str__(self):
         return f"Module of mass {self.mass} and sensitivity {self.sensitivity}."
@@ -75,18 +79,6 @@ class CompositeModule(Module):
             self.m0.update(lr / c0, hps)
             self.m1.update(lr / c1, hps)
 
-    def tare(self, absolute=1, relative=None):
-        if relative is not None:
-            self.mass *= relative
-            self.m0.tare(relative = relative)
-            self.m1.tare(relative = relative)
-        else:
-            self.tare(relative = absolute / self.mass)
-
-    def print_submodules(self):
-        self.m0.print_submodules()
-        self.m1.print_submodules()
-
 
 class TupleModule(Module):
     def __init__(self, m0, m1):
@@ -116,18 +108,6 @@ class TupleModule(Module):
             self.m0.update(lr / c0, hps)
             self.m1.update(lr / c1, hps)
 
-    def tare(self, absolute=1, relative=None):
-        if relative is not None:
-            self.mass *= relative
-            self.m0.tare(relative = relative)
-            self.m1.tare(relative = relative)
-        else:
-            self.tare(relative = absolute / self.mass)
-
-    def print_submodules(self):
-        self.m0.print_submodules()
-        self.m1.print_submodules()
-
 
 class ScalarMultiply(Module):
     def __init__(self, alpha):
@@ -135,7 +115,6 @@ class ScalarMultiply(Module):
         self.mass = 0
         self.sensitivity = abs(alpha)
         self.forward = lambda x: alpha * x
-        self.initialize = lambda device: None
 
 
 class Add(Module):
@@ -144,4 +123,3 @@ class Add(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x[0] + x[1]
-        self.initialize = lambda device: None
