@@ -11,8 +11,8 @@ from tqdm.auto import trange
 from data.dataset import getIterator
 from module.compound import *
 
-architectures = ['resmlp', 'rescnn']
-datasets      = ['cifar10']
+architectures = ['resmlp', 'rescnn', 'gpt']
+datasets      = ['cifar10', 'shakespeare']
 losses        = ['mse', 'xent']
 optims        = ['mgd', 'adamw']
 
@@ -33,6 +33,11 @@ parser.add_argument('--arch',           type=str,   default='resmlp',   choices=
 parser.add_argument('--depth',          type=int,   default=6    )
 parser.add_argument('--block_depth',    type=int,   default=2    )
 parser.add_argument('--width',          type=int,   default=384  )
+parser.add_argument('--context',        type=int,   default=256  )
+parser.add_argument('--num_heads',      type=int,   default=8    )
+parser.add_argument('--d_embed',        type=int,   default=128  )
+parser.add_argument('--d_query',        type=int,   default=16   )
+parser.add_argument('--d_value',        type=int,   default=16   )
 
 # training
 parser.add_argument('--optim',          type=str,   default='mgd',      choices=optims)
@@ -42,6 +47,10 @@ parser.add_argument('--beta',           type=float, default=0.9  )
 parser.add_argument('--wd',             type=float, default=0.01 )
 
 def evalute(output, data, target):
+
+    if args.arch == "gpt":
+        output = output.view(-1, output.size(-1))
+        target = target.view(-1)
 
     acc = (output.argmax(dim=1) == target).sum() / target.numel()
 
@@ -70,6 +79,7 @@ if __name__ == '__main__':
 
     getBatch, input_dim, output_dim = getIterator(  dataset = args.dataset,
                                                     batch_size = args.batch_size,
+                                                    context = args.context,
                                                     device = "cpu" if args.cpu else "cuda" )
 
     def cleanup(sig=None, frame=None):
@@ -85,6 +95,15 @@ if __name__ == '__main__':
 
     elif args.arch == "rescnn":
         net = ResCNN(args.width, args.depth, args.block_depth, input_dim, output_dim)
+
+    elif args.arch == "gpt":
+        net = GPT(  vocab_size = input_dim,
+                    context = args.context,
+                    num_heads = args.num_heads,
+                    d_embed = args.d_embed,
+                    d_query = args.d_query,
+                    d_value = args.d_value,
+                    num_blocks = args.depth )
 
     print(net)
 
