@@ -25,6 +25,11 @@ python main.py \
   --depth $DEPTH \
   --block_depth $BLOCK_DEPTH \
   --width $WIDTH \
+  --context $CONTEXT \
+  --num_heads $NUM_HEADS \
+  --d_embed $D_EMBED \
+  --d_query $D_QUERY \
+  --d_value $D_VALUE \
   --optim $OPTIM \
   --loss $LOSS \
   --lr $LR \
