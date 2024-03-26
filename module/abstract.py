@@ -33,6 +33,9 @@ class Module:
     def __str__(self):
         return f"Module of mass {self.mass} and sensitivity {self.sensitivity}."
 
+    def __call__(self, x):
+        return self.forward(x)
+
     def __matmul__(self, other):
         return CompositeModule(self, other)
 
