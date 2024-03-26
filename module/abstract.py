@@ -12,7 +12,7 @@ class Module:
         raise NotImplementedError
 
     def initialize(self, device):
-        raise NotImplementedError
+        return None
 
     def update(self, lr, hps):
         raise NotImplementedError

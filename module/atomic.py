@@ -10,7 +10,6 @@ class Identity(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x
-        self.initialize = lambda device: None
 
 
 class Flatten(Module):
@@ -19,7 +18,6 @@ class Flatten(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x.flatten(start_dim=1)
-        self.initialize = lambda device: None
 
 
 class Enumerate(Module):
@@ -28,7 +26,6 @@ class Enumerate(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: torch.arange(0, x.size()[1], dtype=torch.long, device=x.device)
-        self.initialize = lambda device: None
 
 
 class Abs(Module):
@@ -37,7 +34,6 @@ class Abs(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: torch.abs(x)
-        self.initialize = lambda device: None
 
 
 class ReLU(Module):
@@ -46,7 +42,6 @@ class ReLU(Module):
         self.mass = 0
         self.sensitivity = 1 / math.sqrt(2)
         self.forward = torch.nn.functional.relu
-        self.initialize = lambda device: None
 
 
 def ScaledReLU():
@@ -59,7 +54,6 @@ class MeanSubtract(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x - x.mean(dim=tuple(range(1,x.dim())), keepdim=True)
-        self.initialize = lambda device: None
 
 
 class RMSDivide(Module):
@@ -68,7 +62,6 @@ class RMSDivide(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x / x.square().mean(dim=tuple(range(1,x.dim())), keepdim=True).sqrt()
-        self.initialize = lambda device: None
 
 
 def LayerNorm():
@@ -81,7 +74,6 @@ class AvgPool(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: torch.nn.functional.adaptive_avg_pool2d(x, output_size)
-        self.initialize = lambda device: None
 
 
 def spectral_norm(p, u, num_steps=1):
