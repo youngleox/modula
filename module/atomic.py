@@ -1,7 +1,7 @@
 import math
 import torch
 
-from module.abstract import Module
+from module.abstract import *
 
 
 class Identity(Module):
@@ -18,6 +18,30 @@ class Flatten(Module):
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x.flatten(start_dim=1)
+
+
+class Duplicate(Module):
+    def __init__(self, num_copies):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x.unsqueeze(dim=-1).expand(list(x.shape)+[num_copies])
+
+
+class AddTrailingDimension(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x.unsqueeze(dim=-1)
+
+
+class RemoveTrailingDimension(Module):
+    def __init__(self):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x.squeeze(dim=-1)
 
 
 class Enumerate(Module):
@@ -51,6 +75,7 @@ def ScaledReLU():
 class MeanSubtract(Module):
     def __init__(self):
         super().__init__()
+        # TODO add dimension flag
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x - x.mean(dim=tuple(range(1,x.dim())), keepdim=True)
@@ -59,6 +84,7 @@ class MeanSubtract(Module):
 class RMSDivide(Module):
     def __init__(self):
         super().__init__()
+        # TODO add dimension flag
         self.mass = 0
         self.sensitivity = 1
         self.forward = lambda x: x / x.square().mean(dim=tuple(range(1,x.dim())), keepdim=True).sqrt()
@@ -66,6 +92,14 @@ class RMSDivide(Module):
 
 def LayerNorm():
     return RMSDivide() @ MeanSubtract()
+
+
+class Mean(Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.mass = 0
+        self.sensitivity = 1
+        self.forward = lambda x: x.mean(dim=dim)
 
 
 class AvgPool(Module):
@@ -84,22 +118,24 @@ def spectral_norm(p, u, num_steps=1):
     return u.norm(dim=0, keepdim=True).sqrt(), u
 
 
-class Linear(Module):
-    def __init__(self, out_features, in_features, mass=1):
+class MultiHeadedLinear(Module):
+    def __init__(self, out_features, in_features, num_heads, mass=1):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1
 
+        self.num_heads = num_heads
         self.out_features = out_features
         self.in_features = in_features
         self.scale = math.sqrt(out_features / in_features)
 
     def forward(self, x):
-        return self.scale * torch.nn.functional.linear(x, self.weight)
+        return self.scale * torch.einsum('ijh, ...jh -> ...ih', self.weight, x)
 
     def initialize(self, device):
-        self.weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
-        torch.nn.init.orthogonal_(self.weight)
+        self.weight = torch.empty((self.out_features, self.in_features, self.num_heads), device=device, requires_grad=True)
+        for head in range(self.num_heads):
+            torch.nn.init.orthogonal_(self.weight[:,:,head])
         self.parameters = [self.weight]
 
         self.momentum = torch.zeros_like(self.weight)
@@ -110,7 +146,7 @@ class Linear(Module):
         self.momentum += (1-hps["beta"]) * (self.weight.grad - self.momentum)
         norm, self.u.data = spectral_norm(self.momentum, self.u)
 
-        if norm == 0.0:
+        if (norm == 0.0).any():
             self.u = torch.randn_like(self.weight[0])
         else:
             self.weight -= lr * self.momentum / norm
@@ -119,7 +155,11 @@ class Linear(Module):
         self.weight.grad = None
 
     def print_submodules(self):
-        print(f"Linear module of shape {(self.out_features, self.in_features)} and mass {self.mass}.")
+        print(f"MultiHeadedLinear module of shape {(self.out_features, self.in_features, self.num_heads)} and mass {self.mass}.")
+
+
+def Linear(out_features, in_features, mass=1):
+    return RemoveTrailingDimension() @ MultiHeadedLinear(out_features, in_features, 1, mass) @ AddTrailingDimension()
 
 
 class Conv2D(Module):
@@ -197,68 +237,28 @@ class Embedding(Module):
         print(f"Embedding module: {self.num_embedding} embeddings of size {self.embedding_dim}. Mass {self.mass}.")
 
 
-class Attention(Module):
+class FunctionalAttention(Module):
 
-    def __init__(self, num_heads, d_embed, d_query, d_value, context, causal, mass=1):
+    def __init__(self, context, causal):
         super().__init__()
-        self.mass = mass
+        self.mass = 0
         self.sensitivity = 1
 
-        self.num_heads = num_heads
-        self.d_embed = d_embed
-        self.d_query = d_query
-        self.d_value = d_value
         self.context = context
         self.causal = causal
 
     def forward(self, x):
-        q = torch.einsum('qdh, bcd -> bhcq', self.Q, x) * math.sqrt(self.d_query / self.d_embed)
-        k = torch.einsum('qdh, bcd -> bhcq', self.K, x) * math.sqrt(self.d_query / self.d_embed)
-        v = torch.einsum('vdh, bcd -> bhcv', self.V, x) * math.sqrt(self.d_value / self.d_embed)
+        q, k, v = x
 
-        att = torch.einsum('bhcq, bhCq -> bhcC', q, k) / self.d_query
+        att = torch.einsum('bcqh, bCqh -> bcCh', q, k) / q.size()[-2]
         if self.causal:
-            T = x.size()[1]
-            att = att.masked_fill(self.mask[:,:,:T,:T] == 0, float('-inf'))
+            T = q.size()[-3]
+            att = att.masked_fill(self.mask[:,:T,:T,:] == 0, float('-inf'))
 
-        p = torch.nn.functional.softmax(att, dim=-1)
-        y = torch.einsum('bhcC, bhCv -> bhcv', p, v)
-        z = torch.einsum('dvh, bhcv -> bcd', self.W, y) * math.sqrt(self.d_embed / self.d_value) / self.num_heads
-
-        return z
+        p = torch.nn.functional.softmax(att, dim=-2)
+        return torch.einsum('bcCh, bCvh -> bcvh', p, v)
 
     def initialize(self, device):
-        self.Q = torch.empty((self.d_query, self.d_embed, self.num_heads), device=device, requires_grad=True)
-        self.K = torch.empty((self.d_query, self.d_embed, self.num_heads), device=device, requires_grad=True)
-        self.V = torch.empty((self.d_value, self.d_embed, self.num_heads), device=device, requires_grad=True)
-        self.W = torch.empty((self.d_embed, self.d_value, self.num_heads), device=device, requires_grad=True)
-
-        self.parameters = [self.Q, self.K, self.V, self.W]
-
-        for M in self.parameters:
-            for head in range(self.num_heads):
-                torch.nn.init.orthogonal_(M[:,:,head])
-
         if self.causal:
             T = self.context
-            self.mask = torch.tril(torch.ones(T, T, device=device)).view(1, 1, T, T)
-
-        self.us   = [torch.randn_like(M[0]) for M in self.parameters]
-        self.moms = [torch.zeros_like(M)    for M in self.parameters]
-
-    @torch.no_grad()
-    def update(self, lr, hps):
-        for M, u, mom in zip(self.parameters, self.us, self.moms):
-            mom += (1-hps["beta"]) * (M.grad - mom)
-            norm, u.data = spectral_norm(mom, u)
-
-            if (norm == 0.0).any():
-                u.data = torch.randn_like(M[0])
-            else:
-                M -= lr / 4 * mom / norm
-                M *= 1 - lr * hps["wd"]
-
-            M.grad = None
-
-    def print_submodules(self):
-        print(f"Attention module. Mass {self.mass}.")
+            self.mask = torch.tril(torch.ones(T, T, device=device)).view(1, T, T, 1)

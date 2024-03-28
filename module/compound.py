@@ -34,6 +34,21 @@ def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
 	return final @ blocks @ initial
 
 
+def Attention(num_heads, d_embed, d_query, d_value, context, causal, mass=4):
+    Q = MultiHeadedLinear(d_query, d_embed, num_heads, mass=mass/4)
+    K = MultiHeadedLinear(d_query, d_embed, num_heads, mass=mass/4)
+    V = MultiHeadedLinear(d_value, d_embed, num_heads, mass=mass/4)
+    W = MultiHeadedLinear(d_embed, d_value, num_heads, mass=mass/4)
+
+    output = Duplicate(num_heads)
+    output = TupleModule((Q, K, V)) @ output
+    output = FunctionalAttention(context, causal) @ output
+    output = W @ output
+    output = Mean(dim=-1) @ output
+
+    return output
+
+
 def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
 	token_embedding = Embedding(vocab_size, d_embed)
 	position_embedding = Embedding(context, d_embed) @ Enumerate()
