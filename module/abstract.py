@@ -7,7 +7,7 @@ class Module:
         self.mass = None
         self.sensitivity = None
         self.parameters = []
-        self.m0, self.m1 = None, None
+        self.children = []
         
     def forward(self, x):
         raise NotImplementedError
@@ -21,14 +21,14 @@ class Module:
     def tare(self, absolute=1, relative=None):
         if relative is not None:
             self.mass *= relative
-            if self.m0 is not None: self.m0.tare(relative = relative)
-            if self.m1 is not None: self.m1.tare(relative = relative)
+            for child in self.children:
+                child.tare(relative = relative)
         else:
             self.tare(relative = absolute / self.mass)
 
     def print_submodules(self):
-        if self.m0 is not None: self.m0.print_submodules()
-        if self.m1 is not None: self.m1.print_submodules()
+        for child in self.children:
+            child.print_submodules()
 
     def __str__(self):
         return f"Module of mass {self.mass} and sensitivity {self.sensitivity}."
@@ -40,7 +40,7 @@ class Module:
         return CompositeModule(self, other)
 
     def __add__(self, other):
-        return Add() @ TupleModule(self, other)
+        return Add() @ TupleModule((self, other))
 
     def __rmul__(self, other):
         assert other != 0, "cannot multiply a module by zero"
@@ -57,47 +57,48 @@ class Module:
 class CompositeModule(Module):
     def __init__(self, m1, m0):
         super().__init__()
-        self.m0 = m0
-        self.m1 = m1
+        self.children = (m0, m1)
 
         self.mass = m0.mass + m1.mass
         self.sensitivity = m1.sensitivity * m0.sensitivity
         
     def forward(self, x):
-        return self.m1.forward(self.m0.forward(x))
+        m0, m1 = self.children
+        return m1.forward(m0.forward(x))
 
     def initialize(self, device):
-        self.m0.initialize(device)
-        self.m1.initialize(device)
-        self.parameters = self.m0.parameters + self.m1.parameters
+        m0, m1 = self.children
+        m0.initialize(device)
+        m1.initialize(device)
+        self.parameters = m0.parameters + m1.parameters
 
     def update(self, lr, hps):
+        m0, m1 = self.children
         if self.mass > 0:
-            self.m0.update(self.m0.mass / self.mass / self.m1.sensitivity * lr, hps)
-            self.m1.update(self.m1.mass / self.mass                       * lr, hps)
+            m0.update(m0.mass / self.mass / m1.sensitivity * lr, hps)
+            m1.update(m1.mass / self.mass                  * lr, hps)
 
 
 class TupleModule(Module):
-    def __init__(self, m0, m1):
+    def __init__(self, tuple_of_modules):
         super().__init__()
-        self.m0 = m0
-        self.m1 = m1
+        self.children = tuple_of_modules
 
-        self.mass = m0.mass + m1.mass
-        self.sensitivity = m0.sensitivity + m1.sensitivity
+        self.mass        = sum(child.mass        for child in self.children)
+        self.sensitivity = sum(child.sensitivity for child in self.children)
         
     def forward(self, x):
-        return (self.m0.forward(x), self.m1.forward(x))
+        return tuple(child.forward(x) for child in self.children)
 
     def initialize(self, device):
-        self.m0.initialize(device)
-        self.m1.initialize(device)
-        self.parameters = self.m0.parameters + self.m1.parameters
+        for child in self.children:
+            child.initialize(device)
+            self.parameters += child.parameters
 
     def update(self, lr, hps):
         if self.mass > 0:
-            self.m0.update(self.m0.mass / self.mass * lr, hps)
-            self.m1.update(self.m1.mass / self.mass * lr, hps)
+            for child in self.children:
+                child.update(child.mass / self.mass * lr, hps)
 
 
 class ScalarMultiply(Module):
