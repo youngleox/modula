@@ -28,22 +28,6 @@ class Duplicate(Module):
         self.forward = lambda x: x.unsqueeze(dim=-1).expand(list(x.shape)+[num_copies])
 
 
-class AddTrailingDimension(Module):
-    def __init__(self):
-        super().__init__()
-        self.mass = 0
-        self.sensitivity = 1
-        self.forward = lambda x: x.unsqueeze(dim=-1)
-
-
-class RemoveTrailingDimension(Module):
-    def __init__(self):
-        super().__init__()
-        self.mass = 0
-        self.sensitivity = 1
-        self.forward = lambda x: x.squeeze(dim=-1)
-
-
 class Enumerate(Module):
     def __init__(self):
         super().__init__()
@@ -118,8 +102,8 @@ def spectral_norm(p, u, num_steps=1):
     return u.norm(dim=0, keepdim=True).sqrt(), u
 
 
-class MultiHeadedLinear(Module):
-    def __init__(self, out_features, in_features, num_heads, mass=1):
+class Linear(Module):
+    def __init__(self, out_features, in_features, num_heads=None, mass=1):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1
@@ -130,11 +114,16 @@ class MultiHeadedLinear(Module):
         self.scale = math.sqrt(out_features / in_features)
 
     def forward(self, x):
-        return self.scale * torch.einsum('ijh, ...jh -> ...ih', self.weight, x)
+        if self.num_heads is None: x = x.unsqueeze(dim=-1)
+        x = self.scale * torch.einsum('ijh, ...jh -> ...ih', self.weight, x)
+        if self.num_heads is None: x = x.squeeze(dim=-1)
+
+        return x
 
     def initialize(self, device):
-        self.weight = torch.empty((self.out_features, self.in_features, self.num_heads), device=device, requires_grad=True)
-        for head in range(self.num_heads):
+        num_heads = 1 if self.num_heads is None else self.num_heads
+        self.weight = torch.empty((self.out_features, self.in_features, num_heads), device=device, requires_grad=True)
+        for head in range(num_heads):
             torch.nn.init.orthogonal_(self.weight[:,:,head])
         self.parameters = [self.weight]
 
@@ -155,11 +144,7 @@ class MultiHeadedLinear(Module):
         self.weight.grad = None
 
     def print_submodules(self):
-        print(f"MultiHeadedLinear module of shape {(self.out_features, self.in_features, self.num_heads)} and mass {self.mass}.")
-
-
-def Linear(out_features, in_features, mass=1):
-    return RemoveTrailingDimension() @ MultiHeadedLinear(out_features, in_features, 1, mass) @ AddTrailingDimension()
+        print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
 
 
 class Conv2D(Module):
