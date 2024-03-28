@@ -13,10 +13,10 @@ class Module:
         raise NotImplementedError
 
     def initialize(self, device):
-        return None
+        pass
 
     def update(self, lr, hps):
-        raise NotImplementedError
+        pass
 
     def tare(self, absolute=1, relative=None):
         if relative is not None:
@@ -72,15 +72,9 @@ class CompositeModule(Module):
         self.parameters = self.m0.parameters + self.m1.parameters
 
     def update(self, lr, hps):
-        if self.m0.mass == 0:
-            self.m1.update(lr, hps)
-        elif self.m1.mass == 0:
-            self.m0.update(lr / self.m1.sensitivity, hps)
-        else:
-            c0 = self.mass / self.m0.mass * self.m1.sensitivity
-            c1 = self.mass / self.m1.mass
-            self.m0.update(lr / c0, hps)
-            self.m1.update(lr / c1, hps)
+        if self.mass > 0:
+            self.m0.update(self.m0.mass / self.mass / self.m1.sensitivity * lr, hps)
+            self.m1.update(self.m1.mass / self.mass                       * lr, hps)
 
 
 class TupleModule(Module):
@@ -101,15 +95,9 @@ class TupleModule(Module):
         self.parameters = self.m0.parameters + self.m1.parameters
 
     def update(self, lr, hps):
-        if self.m0.mass == 0:
-            self.m1.update(lr, hps)
-        elif self.m1.mass == 0:
-            self.m0.update(lr, hps)
-        else:
-            c0 = self.mass / self.m0.mass
-            c1 = self.mass / self.m1.mass
-            self.m0.update(lr / c0, hps)
-            self.m1.update(lr / c1, hps)
+        if self.mass > 0:
+            self.m0.update(self.m0.mass / self.mass * lr, hps)
+            self.m1.update(self.m1.mass / self.mass * lr, hps)
 
 
 class ScalarMultiply(Module):
