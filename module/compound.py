@@ -41,7 +41,7 @@ def Attention(num_heads, d_embed, d_query, d_value, context, causal, mass=4):
     W = Linear(d_embed, d_value, num_heads, mass=mass/4)
 
     output = Duplicate(num_heads)
-    output = TupleModule((Q, K, V)) @ output
+    output = (Q, K, V) @ output
     output = FunctionalAttention(context, causal) @ output
     output = W @ output
     output = Mean(dim=-1) @ output

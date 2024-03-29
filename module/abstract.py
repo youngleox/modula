@@ -37,10 +37,15 @@ class Module:
         return self.forward(x)
 
     def __matmul__(self, other):
+        if isinstance(other, tuple): other = TupleModule(other)
         return CompositeModule(self, other)
 
+    def __rmatmul__(self, other):
+        if isinstance(other, tuple): other = TupleModule(other)
+        return CompositeModule(other, self)
+
     def __add__(self, other):
-        return Add() @ TupleModule((self, other))
+        return Add() @ (self, other)
 
     def __rmul__(self, other):
         assert other != 0, "cannot multiply a module by zero"
