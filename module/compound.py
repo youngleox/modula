@@ -39,14 +39,9 @@ def Attention(num_heads, d_embed, d_query, d_value, context, causal, mass=4):
     K = Linear(d_query, d_embed, num_heads, mass=mass/4)
     V = Linear(d_value, d_embed, num_heads, mass=mass/4)
     W = Linear(d_embed, d_value, num_heads, mass=mass/4)
+    funcAttn = FunctionalAttention(context, causal)
 
-    output = Duplicate(num_heads)
-    output = (Q, K, V) @ output
-    output = FunctionalAttention(context, causal) @ output
-    output = W @ output
-    output = Mean(dim=-1) @ output
-
-    return output
+    return Mean(dim=-1) @ W @ funcAttn @ (Q, K, V) @ Duplicate(num_heads)
 
 
 def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
