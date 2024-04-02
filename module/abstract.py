@@ -42,14 +42,22 @@ class Module:
 
     def __rmatmul__(self, other):
         if isinstance(other, tuple): other = TupleModule(other)
-        return CompositeModule(other, self)
+        return other @ self
 
     def __add__(self, other):
         return Add() @ (self, other)
 
+    def __mul__(self, other):
+        assert other != 0, "cannot multiply a module by zero"
+        return self @ ScalarMultiply(other)
+
     def __rmul__(self, other):
         assert other != 0, "cannot multiply a module by zero"
         return ScalarMultiply(other) @ self
+
+    def __truediv__(self, other):
+        assert other != 0, "cannot divide a module by zero"
+        return self * (1/other)
 
     def __pow__(self, other):
         assert other >= 0 and other % 1 == 0, "nonnegative integer powers only"
@@ -111,12 +119,21 @@ class ScalarMultiply(Module):
         super().__init__()
         self.mass = 0
         self.sensitivity = abs(alpha)
-        self.forward = lambda x: alpha * x
 
+        self.alpha = alpha
+
+    def forward(self, x):
+        if isinstance(x, tuple):
+            return tuple(self.forward(x_i) for x_i in x)
+        else:
+            return self.alpha*x
 
 class Add(Module):
     def __init__(self):
         super().__init__()
         self.mass = 0
         self.sensitivity = 1
-        self.forward = lambda x: x[0] + x[1]
+
+    def forward(self, x):
+        assert isinstance(x, tuple), "can only compose add with tuples"
+        return sum(x_i for x_i in x)
