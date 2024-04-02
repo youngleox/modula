@@ -234,8 +234,7 @@ class FunctionalAttention(Module):
 
         att = torch.einsum('bcqh, bCqh -> bcCh', q, k) / q.size()[-2]
         if self.causal:
-            ones = torch.ones_like(att[0,:,:,0]).unsqueeze(0).unsqueeze(-1)
-            att = att + 1 - ones/ones.tril()
+            att = att - (torch.ones_like(att[0,:,:,0]) * float('inf')).triu(diagonal=1).unsqueeze(0).unsqueeze(-1)
         p = torch.nn.functional.softmax(att, dim=-2)
         y = torch.einsum('bcCh, bCvh -> bcvh', p, v)
 
