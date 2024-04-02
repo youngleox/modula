@@ -222,12 +222,11 @@ class Embedding(Module):
 
 class FunctionalAttention(Module):
 
-    def __init__(self, context, causal):
+    def __init__(self, causal):
         super().__init__()
         self.mass = 0
         self.sensitivity = 1
 
-        self.context = context
         self.causal = causal
 
     def forward(self, x):
@@ -235,13 +234,9 @@ class FunctionalAttention(Module):
 
         att = torch.einsum('bcqh, bCqh -> bcCh', q, k) / q.size()[-2]
         if self.causal:
-            T = q.size()[-3]
-            att = att.masked_fill(self.mask[:,:T,:T,:] == 0, float('-inf'))
-
+            ones = torch.ones_like(att)
+            att = att + 1 - ones/ones.tril()
         p = torch.nn.functional.softmax(att, dim=-2)
-        return torch.einsum('bcCh, bCvh -> bcvh', p, v)
+        y = torch.einsum('bcCh, bCvh -> bcvh', p, v)
 
-    def initialize(self, device):
-        if self.causal:
-            T = self.context
-            self.mask = torch.tril(torch.ones(T, T, device=device)).view(1, T, T, 1)
+        return y
