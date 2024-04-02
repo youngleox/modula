@@ -57,25 +57,23 @@ def ScaledReLU():
 
 
 class MeanSubtract(Module):
-    def __init__(self):
+    def __init__(self, dim=-1):
         super().__init__()
-        # TODO add dimension flag
         self.mass = 0
         self.sensitivity = 1
-        self.forward = lambda x: x - x.mean(dim=tuple(range(1,x.dim())), keepdim=True)
+        self.forward = lambda x: x - x.mean(dim=dim, keepdim=True)
 
 
 class RMSDivide(Module):
-    def __init__(self):
+    def __init__(self, dim=-1):
         super().__init__()
-        # TODO add dimension flag
         self.mass = 0
         self.sensitivity = 1
-        self.forward = lambda x: x / x.square().mean(dim=tuple(range(1,x.dim())), keepdim=True).sqrt()
+        self.forward = lambda x: x / x.square().mean(dim=dim, keepdim=True).sqrt()
 
 
-def LayerNorm():
-    return RMSDivide() @ MeanSubtract()
+def LayerNorm(dim=-1):
+    return RMSDivide(dim) @ MeanSubtract(dim)
 
 
 class Mean(Module):
@@ -202,8 +200,8 @@ class Embedding(Module):
 
         self.scale = math.sqrt(embedding_dim)
 
-    def forward(self, input):
-        return self.scale * torch.nn.functional.embedding(input, self.weight)
+    def forward(self, x):
+        return self.scale * torch.nn.functional.embedding(x, self.weight)
 
     def initialize(self, device):
         self.weight = torch.empty((self.num_embedding, self.embedding_dim), device=device, requires_grad=True)

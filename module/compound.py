@@ -25,7 +25,7 @@ def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
 def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
 	initial = Conv2D(width, input_dim[0])
 
-	residue = MeanSubtract() @ Abs() @ Conv2D(width, width) @ RMSDivide()
+	residue = MeanSubtract(dim=(1,2,3)) @ Abs() @ Conv2D(width, width) @ RMSDivide(dim=(1,2,3))
 	blocks = residualize(residue, num_blocks, block_depth)
 	blocks.tare()
 
