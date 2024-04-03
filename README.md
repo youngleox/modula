@@ -1,1 +1,1 @@
-![modula logo](modula.svg#gh-dark-mode-only)
+<picture><img src="modula.svg#gh-dark-mode-only"></picture>
