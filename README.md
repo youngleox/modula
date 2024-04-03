@@ -1,5 +1,5 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="modula.svg">
-  <source media="(prefers-color-scheme: light)" srcset="">
+  <source media="(prefers-color-scheme: light)" srcset="modula_light.svg">
   <img alt="modula logo" src="modula.svg">
 </picture>
