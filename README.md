@@ -1,1 +1,1 @@
-<picture><img src="modula.svg#gh-dark-mode-only"></picture>
+<picture><img src="modula.svg"></picture>
