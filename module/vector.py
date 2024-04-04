@@ -3,7 +3,7 @@ class Vector:
 	def __init__(self, v=None):
 
 		if isinstance(v, tuple):
-			self.weight = tuple(Vector(vi) for vi in v)
+			self.weight = tuple(vi for vi in v)
 		else:
 			self.weight = v
 
@@ -68,17 +68,20 @@ if __name__ == "__main__":
 	for t in [1, torch.tensor(1), torch.tensor(1.0, requires_grad=True)]:
 		print('\n',type(t))
 
-		a = (t,(t,t,(t,)),t)
-		va = Vector(a)
-		print(va)
+		a = Vector(t)
+		a = Vector((a,a))
+		a = Vector((a,a))
 
-		vb = va + (va*2)**3 - 3*va
-		print(vb)
+		print(a)
+
+		b = a + (a*2)**3 - 3*a
+		
+		print(b)
 
 		if isinstance(t, torch.Tensor) and t.requires_grad:
-			print(va.grad())
+			print(a.grad())
 
 			loss = t.square()
 			loss.backward()
 
-			print(va.grad())
+			print(a.grad())
