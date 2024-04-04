@@ -11,6 +11,11 @@ for LR in 0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0; do
      export DEPTH=$DEPTH
      export BLOCK_DEPTH=2
      export WIDTH=128
+     export CONTEXT=0
+     export NUM_HEADS=0
+     export D_EMBED=0
+     export D_QUERY=0
+     export D_VALUE=0
      export OPTIM=mgd
      export LOSS=xent
      export LR=$LR
