@@ -1,19 +1,16 @@
 class Vector:
 
-	def __init__(self, v=None):
+	def __init__(self, v):
 
-		if isinstance(v, tuple):
-			self.weight = tuple(vi for vi in v)
-		else:
-			self.weight = v
+		self.weight = v
 
 	def grad(self):
-		new_vector = Vector()
-		if isinstance(self.weight, tuple):
-			new_vector.weight = tuple(wi.grad() for wi in self.weight)
+		if self.weight is None:
+			return Vector(None)
+		elif isinstance(self.weight, tuple):
+			return Vector(tuple(wi.grad() for wi in self.weight))
 		else:
-			new_vector.weight = self.weight.grad
-		return new_vector
+			return Vector(self.weight.grad)
 
 	def __getitem__(self, item):
 		assert isinstance(self.weight, tuple)
@@ -30,20 +27,20 @@ class Vector:
 			return str(self.weight)
 
 	def __add__(self, other):
-		new_vector = Vector()
-		if isinstance(self.weight, tuple):
-			new_vector.weight = tuple(wi + oi for wi, oi in zip(self.weight, other.weight))
+		if self.weight is None:
+			return Vector(None)
+		elif isinstance(self.weight, tuple):
+			return Vector(tuple(wi + oi for wi, oi in zip(self.weight, other.weight)))
 		else:
-			new_vector.weight = self.weight + other.weight
-		return new_vector
+			return Vector(self.weight + other.weight)
 
 	def __mul__(self, other):
-		new_vector = Vector()
-		if isinstance(self.weight, tuple):
-			new_vector.weight = tuple(wi * other for wi in self.weight)
+		if self.weight is None:
+			return Vector(None)
+		elif isinstance(self.weight, tuple):
+			return Vector(tuple(wi * other for wi in self.weight))
 		else:
-			new_vector.weight = self.weight * other
-		return new_vector
+			return Vector(self.weight * other)
 
 	def __sub__(self, other):
 		return self + (-1) * other
@@ -55,12 +52,12 @@ class Vector:
 		return self * (1/other)
 
 	def __pow__(self, other):
-		new_vector = Vector()
-		if isinstance(self.weight, tuple):
-			new_vector.weight = tuple(wi ** other for wi in self.weight)
+		if self.weight is None:
+			return Vector(None)
+		elif isinstance(self.weight, tuple):
+			return Vector(tuple(wi ** other for wi in self.weight))
 		else:
-			new_vector.weight = self.weight ** other
-		return new_vector
+			return Vector(self.weight ** other)
 
 
 if __name__ == "__main__":
@@ -69,8 +66,10 @@ if __name__ == "__main__":
 		print('\n',type(t))
 
 		a = Vector(t)
+		b = Vector(None)
+		a = Vector((a,b))
 		a = Vector((a,a))
-		a = Vector((a,a))
+
 
 		print(a)
 
