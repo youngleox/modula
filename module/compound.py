@@ -1,5 +1,5 @@
+import math
 from module.atomic import *
-import numpy
 
 
 def residualize(residue, num_blocks, block_depth):
@@ -11,7 +11,7 @@ def residualize(residue, num_blocks, block_depth):
 
 
 def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
-	initial = Linear(width, numpy.prod(input_dim)) @ Flatten()
+	initial = Linear(width, math.prod(input_dim)) @ Flatten()
 
 	residue = MeanSubtract() @ Abs() @ Linear(width, width) @ RMSDivide()
 	blocks = residualize(residue, num_blocks, block_depth)
