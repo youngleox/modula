@@ -11,6 +11,11 @@ for LR in 0.00012207031 0.00024414062 0.00048828125 0.0009765625 0.001953125 0.0
      export DEPTH=$DEPTH
      export BLOCK_DEPTH=2
      export WIDTH=128
+     export CONTEXT=0
+     export NUM_HEADS=0
+     export D_EMBED=0
+     export D_QUERY=0
+     export D_VALUE=0
      export OPTIM=adamw
      export LOSS=xent
      export LR=$LR
