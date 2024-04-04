@@ -4,7 +4,7 @@
   <img alt="modula logo" src="logo/modula.svg">
 </picture>
 
-`Modula` is a deep learning framework designed for graceful scaling of training. In Modula, the user defines a network architecture, by arbitrarily combining and composing `atomic modules`. Modula then automatically constructs an optimizer tailored specifically to this network architecture. We call this optimizer `modular gradient descent`. Modular gradient descent is designed such that its optimal learning rate remains roughly fixed as the number and size of atomic modules is scaled. Essentially, Modula automates the computation of architecture-optimizer scaling rules like maximal update parameterization (μP) for any computation graph.
+Modula is a deep learning framework designed for graceful scaling. The user defines a network architecture in Modula by arbitrarily combining and composing atomic modules. Modula then automatically constructs an optimizer called modular gradient descent that is tailored specifically to this network architecture. Modular gradient descent is designed such that its optimal learning rate remains roughly fixed as the number and size of atomic modules is scaled. Essentially, Modula automates the computation of architecture-optimizer scaling rules such as maximal update parameterization for any computation graph.
 
 ## Example
 
