@@ -3,7 +3,6 @@ import copy
 
 class Module:
     def __init__(self):
-        super().__init__()
         self.mass = None
         self.sensitivity = None
         self.parameters = []
