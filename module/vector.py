@@ -43,6 +43,18 @@ class Vector:
         else:
             self.weight.grad = None
 
+    def flatten(self):
+        """Returns a list of all tensors in this Vector."""
+        tensor_list = []
+        if self.weight is None:
+            pass
+        elif isinstance(self.weight, tuple):
+            for wi in self.weight:
+                tensor_list += wi.flatten()
+        else:
+            tensor_list += [self.weight]
+        return tensor_list
+
     def sum(self):
         """Computes the sum of all entries in the Vector."""
         if self.weight is None:
