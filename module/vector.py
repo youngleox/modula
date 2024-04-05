@@ -10,6 +10,10 @@ class Vector:
 	allowing weight updates to be implemented using simple algebra.
     """
 
+	def cosine_similarity(v1, v2):
+		"""Computes the cosine similarity between two Vectors."""
+		return (v1 * v2).sum() / (v1**2).sum()**0.5 / (v2**2).sum()**0.5
+
 	def __init__(self, v):
 		"""Stores a tensor or tuple of Vectors."""
 		self.weight = v
@@ -32,6 +36,16 @@ class Vector:
 				wi.zero_grad()
 		else:
 			self.weight.grad = None
+
+	def sum(self):
+		"""Computes the sum of all entries in the Vector."""
+		if self.weight is None:
+			return 0
+		elif isinstance(self.weight, tuple):
+			return sum(wi.sum() for wi in self.weight)
+		else:
+			return self.weight.sum().item()
+
 
 	def __getitem__(self, item):
 		"""Allows Vectors of tuples to be indexed."""
