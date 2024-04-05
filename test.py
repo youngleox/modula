@@ -2,7 +2,7 @@ import torch
 import math
 
 from module.atomic import Linear
-from module.bond import Identity, ReLU, MeanSubtract, RMSDivide
+from module.bond import Identity, ReLU, Abs, MeanSubtract, RMSDivide
 from module.vector import cosine_similarity
 
 # set the device
@@ -18,16 +18,17 @@ lr = 0.0001
 input_dim = 1000
 output_dim = 10
 num_blocks = 5
-block_depth = 3
+block_depth = 2
 width = 100
 
 # sample some fake training data
-data = torch.randn(3200, input_dim, device=device)
+data   = torch.randn(3200, input_dim,  device=device)
 target = torch.randn(3200, output_dim, device=device)
 
 # define the network architecture
-residue = (MeanSubtract() @ ReLU() @ Linear(width, width) @ RMSDivide()) ** block_depth
-blocks = (Identity() + 1/num_blocks * residue) ** num_blocks
+residue = (MeanSubtract() @ Abs() @ Linear(width, width) @ RMSDivide()) ** block_depth
+blocks = ((1-1/num_blocks)*Identity() + 1/num_blocks * residue) ** num_blocks
+blocks.tare()
 net = Linear(output_dim, width) @ blocks @ Linear(width, input_dim)
 
 # initialise the weights and optimisation state
@@ -51,4 +52,4 @@ for step in range(steps):
     weights.zero_grad()
 
     if step % 50 == 0:
-        print(step, '\t', round(loss.item(),9), '\t', round(lr,5))
+        print(step, '\t', f"{loss.item():.4}", '\t', f"{lr:.4}")
