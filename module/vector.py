@@ -12,7 +12,12 @@ class Vector:
 
 	def cosine_similarity(v1, v2):
 		"""Computes the cosine similarity between two Vectors."""
-		return (v1 * v2).sum() / (v1**2).sum()**0.5 / (v2**2).sum()**0.5
+		v1_size = (v1**2).sum()**0.5
+		v2_size = (v2**2).sum()**0.5
+		if v1_size > 0 and v2_size > 0:
+			return (v1 * v2).sum() / (v1_size * v2_size)
+		else:
+			return 0
 
 	def __init__(self, v):
 		"""Stores a tensor or tuple of Vectors."""
