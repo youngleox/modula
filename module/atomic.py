@@ -4,6 +4,16 @@ import torch
 from module.vector import Vector
 from module.abstract import Module
 
+def spectral_norm(p, num_steps=1):
+    u = torch.randn_like(p[0])
+
+    for _ in range(num_steps):
+        v = torch.einsum('ab..., b... -> a...', p, u)
+        v /= v.norm(dim=0, keepdim=True)
+        u = torch.einsum('a..., ab... -> b...', v, p)
+
+    return u.norm(dim=0, keepdim=True)
+
 
 class Linear(Module):
     def __init__(self, out_features, in_features, num_heads=None):
@@ -32,7 +42,7 @@ class Linear(Module):
 
     @torch.no_grad()
     def normalize(self, vector):
-        return Vector(vector.weight / vector.weight.norm(dim=(0,1), keepdim=True))
+        return Vector(vector.weight / spectral_norm(vector.weight))
 
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
