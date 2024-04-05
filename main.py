@@ -139,8 +139,8 @@ if __name__ == '__main__':
         schedule = 1 - step / args.train_steps
         if args.optim == "mgd":
             with torch.no_grad():
-                mom1 += (1-args.beta1) * (weights.grad()    - mom1)
-                mom2 += (1-args.beta2) * (weights.grad()**2 - mom2)
+                mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
+                mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
 
                 weights -= args.lr * schedule * net.normalize(mom1 / mom2 ** 0.5)
                 weights -= args.lr * schedule * args.wd * weights
