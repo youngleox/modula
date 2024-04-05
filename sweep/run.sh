@@ -30,10 +30,10 @@ python main.py \
   --d_embed $D_EMBED \
   --d_query $D_QUERY \
   --d_value $D_VALUE \
-  --optim $OPTIM \
   --loss $LOSS \
   --lr $LR \
-  --beta $BETA \
+  --beta1 $BETA1 \
+  --beta2 $BETA2 \
   --wd $WD \
   1> logs/$TAG/out.log \
   2> logs/$TAG/err.log
