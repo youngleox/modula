@@ -130,8 +130,8 @@ if __name__ == "__main__":
     a = Vector((a,b))
     a = Vector((a,a))
 
-    print(a)                     # 2
-    print(a + (a*2)**3 - 3*a)     # 60
+    print(a)                       # 2
+    print(a + (a*2)**3 - 3*a)      # 60
     print(1/a)                     # 1/2
     print(a/a)                     # 1
     print(a-a)                     # 0
@@ -145,4 +145,4 @@ if __name__ == "__main__":
     with torch.no_grad():
         a -= a/2
 
-    print(a)                    # 1, requires_grad=True
+    print(a)                       # 1, requires_grad=True
