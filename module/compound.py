@@ -1,5 +1,6 @@
 import math
 from module.atomic import *
+from module.bond   import *
 
 
 def residualize(residue, num_blocks, block_depth):
