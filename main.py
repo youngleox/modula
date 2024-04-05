@@ -14,7 +14,6 @@ from module.compound import *
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare']
 losses        = ['mse', 'xent']
-optims        = ['mgd', 'adamw']
 
 parser = argparse.ArgumentParser()
 
@@ -40,7 +39,6 @@ parser.add_argument('--d_query',        type=int,   default=16   )
 parser.add_argument('--d_value',        type=int,   default=16   )
 
 # training
-parser.add_argument('--optim',          type=str,   default='mgd',      choices=optims)
 parser.add_argument('--loss',           type=str,   default='xent',     choices=losses)
 parser.add_argument('--lr',             type=float, default=0.5  )
 parser.add_argument('--beta1',          type=float, default=0.9  )
@@ -112,9 +110,6 @@ if __name__ == '__main__':
     mom1 = 0 * weights
     mom2 = 0 * weights
 
-    if args.optim == "adamw":
-        optim = torch.optim.AdamW(net.parameters, lr=args.lr, betas=(args.beta, 0.999), weight_decay=args.wd)
-
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
     for step in (pbar := trange(args.train_steps + 1, file=sys.stdout)):
@@ -137,19 +132,18 @@ if __name__ == '__main__':
         train_loss.backward()
 
         schedule = 1 - step / args.train_steps
-        if args.optim == "mgd":
-            with torch.no_grad():
-                mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
-                mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
 
-                weights -= args.lr * schedule * net.normalize(mom1 / mom2 ** 0.5)
-                weights -= args.lr * schedule * args.wd * weights
+        with torch.no_grad():
+            mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
+            mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
 
-                weights.zero_grad()
-        else:
-            for g in optim.param_groups: g['lr'] = args.lr*schedule
-            optim.step()
-            optim.zero_grad()
+            update = mom1 / mom2 ** 0.5
+            update = net.normalize(update)
+
+            weights -= args.lr * schedule * update
+            weights -= args.lr * schedule * args.wd * weights
+
+            weights.zero_grad()
 
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())
