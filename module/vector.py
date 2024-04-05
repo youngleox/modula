@@ -8,7 +8,7 @@ class Vector:
 
 	Vectors are intended to store the weights of a neural net,
 	allowing weight updates to be implemented using simple algebra.
-    """
+	"""
 
 	def cosine_similarity(v1, v2):
 		"""Computes the cosine similarity between two Vectors."""
