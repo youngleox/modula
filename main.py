@@ -43,7 +43,8 @@ parser.add_argument('--d_value',        type=int,   default=16   )
 parser.add_argument('--optim',          type=str,   default='mgd',      choices=optims)
 parser.add_argument('--loss',           type=str,   default='xent',     choices=losses)
 parser.add_argument('--lr',             type=float, default=0.5  )
-parser.add_argument('--beta',           type=float, default=0.9  )
+parser.add_argument('--beta1',          type=float, default=0.9  )
+parser.add_argument('--beta2',          type=float, default=0.99 )
 parser.add_argument('--wd',             type=float, default=0.01 )
 
 def evalute(output, data, target):
@@ -107,7 +108,9 @@ if __name__ == '__main__':
 
     print(net)
 
-    net.initialize(device = "cpu" if args.cpu else "cuda")
+    weights = net.initialize(device = "cpu" if args.cpu else "cuda")
+    mom1 = 0 * weights
+    mom2 = 0 * weights
 
     if args.optim == "adamw":
         optim = torch.optim.AdamW(net.parameters, lr=args.lr, betas=(args.beta, 0.999), weight_decay=args.wd)
@@ -120,7 +123,7 @@ if __name__ == '__main__':
             test_loss = test_acc = 0
             for _ in range(args.test_steps):
                 data, target = getBatch(train = False)
-                with torch.no_grad(): loss, acc = evalute(net.forward(data), data, target)
+                with torch.no_grad(): loss, acc = evalute(net.forward(data, weights), data, target)
 
                 test_loss += loss
                 test_acc += acc
@@ -129,13 +132,20 @@ if __name__ == '__main__':
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
         data, target = getBatch(train = True)
-        train_loss, train_acc = evalute(net.forward(data), data, target)
+        train_loss, train_acc = evalute(net.forward(data, weights), data, target)
 
         train_loss.backward()
 
         schedule = 1 - step / args.train_steps
         if args.optim == "mgd":
-            net.update(lr=args.lr*schedule, hps={"beta":args.beta, "wd":args.wd})
+            with torch.no_grad():
+                mom1 += (1-args.beta1) * (weights.grad()    - mom1)
+                mom2 += (1-args.beta2) * (weights.grad()**2 - mom2)
+
+                weights -= args.lr * schedule * net.normalize(mom1 / mom2 ** 0.5)
+                weights -= args.lr * schedule * args.wd * weights
+
+                weights.zero_grad()
         else:
             for g in optim.param_groups: g['lr'] = args.lr*schedule
             optim.step()
