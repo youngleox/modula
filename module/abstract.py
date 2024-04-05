@@ -108,7 +108,7 @@ class TupleModule(Module):
         return Vector(tuple(child.initialize(device) for child in self.children))
 
     def normalize(self, vector):
-        if self. mass > 0:
+        if self.mass > 0:
             normalized_child_vectors = []
             for vi, child in zip(vector, self.children):
                 normalized_child_vectors.append(child.mass / self.mass * child.normalize(vi))
