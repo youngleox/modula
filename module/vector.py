@@ -70,7 +70,10 @@ class Vector:
 			else:
 				return Vector(tuple(wi * oi for wi, oi in zip(self.weight, other.weight)))
 		else:
-			return Vector(self.weight * other)
+			if isinstance(other, int) or isinstance(other, float):
+				return Vector(self.weight * other)
+			else:
+				return Vector(self.weight * other.weight)
 
 	def __sub__(self, other):
 		"""Subtract a Vector from another Vector."""
@@ -113,6 +116,8 @@ if __name__ == "__main__":
 	print(1/a) 					# 1/2
 	print(a/a) 					# 1
 	print(a-a) 					# 0
+	print(a*a*a-a) 				# 6
+	print(a/a**0.5)				# sqrt(2)
 		
 	t = torch.tensor(2.0, requires_grad=True)
 	a = Vector(t); a = Vector((a,a)); a = Vector((a,a))
