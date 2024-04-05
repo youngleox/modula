@@ -1,3 +1,5 @@
+import copy
+
 from module.vector import Vector
 
 
@@ -60,7 +62,7 @@ class Module:
     def __pow__(self, other):
         assert other >= 0 and other % 1 == 0, "nonnegative integer powers only"
         if other > 0:
-            return self @ self ** (other - 1)
+            return copy.deepcopy(self) @ self ** (other - 1)
         else:
             return ScalarMultiply(1.0)
 
