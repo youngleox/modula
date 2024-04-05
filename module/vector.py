@@ -1,3 +1,13 @@
+def cosine_similarity(v1, v2):
+    """Computes the cosine similarity between two Vectors."""
+    v1_size = (v1**2).sum()**0.5
+    v2_size = (v2**2).sum()**0.5
+    if v1_size > 0 and v2_size > 0:
+        return (v1 * v2).sum() / (v1_size * v2_size)
+    else:
+        return 0
+
+
 class Vector:
     """For doing algebra on tensors and trees of tensors.
 
@@ -9,15 +19,6 @@ class Vector:
     Vectors are intended to store the weights of a neural net,
     allowing weight updates to be implemented using simple algebra.
     """
-
-    def cosine_similarity(v1, v2):
-        """Computes the cosine similarity between two Vectors."""
-        v1_size = (v1**2).sum()**0.5
-        v2_size = (v2**2).sum()**0.5
-        if v1_size > 0 and v2_size > 0:
-            return (v1 * v2).sum() / (v1_size * v2_size)
-        else:
-            return 0
 
     def __init__(self, v):
         """Stores a tensor or tuple of Vectors."""
