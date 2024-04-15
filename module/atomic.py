@@ -16,9 +16,9 @@ def spectral_norm(p, num_steps=1):
 
 
 class Linear(Module):
-    def __init__(self, out_features, in_features, num_heads=None):
+    def __init__(self, out_features, in_features, num_heads=None, mass=1):
         super().__init__()
-        self.mass = 1
+        self.mass = mass
         self.sensitivity = 1
 
         self.num_heads = num_heads
@@ -49,9 +49,9 @@ class Linear(Module):
 
 
 class Conv2D(Module):
-    def __init__(self, out_channels, in_channels, kernel_size=3, stride=1, padding=1):
+    def __init__(self, out_channels, in_channels, kernel_size=3, stride=1, padding=1, mass=1):
         super().__init__()
-        self.mass = 1
+        self.mass = mass
         self.sensitivity = 1
 
         self.out_channels = out_channels
@@ -81,9 +81,9 @@ class Conv2D(Module):
 
 class Embedding(Module):
 
-    def __init__(self, num_embedding, embedding_dim):
+    def __init__(self, num_embedding, embedding_dim, mass=1):
         super().__init__()
-        self.mass = 1
+        self.mass = mass
         self.sensitivity = 1
 
         self.num_embedding = num_embedding
