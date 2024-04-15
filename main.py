@@ -39,6 +39,7 @@ parser.add_argument('--d_query',        type=int,   default=16   )
 parser.add_argument('--d_value',        type=int,   default=16   )
 
 # training
+parser.add_argument('--normalize',      action='store_true'      )
 parser.add_argument('--loss',           type=str,   default='xent',     choices=losses)
 parser.add_argument('--lr',             type=float, default=0.5  )
 parser.add_argument('--beta1',          type=float, default=0.9  )
@@ -108,7 +109,8 @@ if __name__ == '__main__':
 
     weights = net.initialize(device = "cpu" if args.cpu else "cuda")
     mom1 = 0 * weights
-    mom2 = 0 * weights
+    if args.beta2 >= 0:
+        mom2 = 0 * weights
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
@@ -135,10 +137,15 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
-            mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
 
-            update = mom1 / mom2 ** 0.5
-            update = net.normalize(update)
+            update = mom1
+
+            if args.beta2 >= 0:
+                mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
+                update = update / mom2 ** 0.5
+
+            if args.normalize:
+                update = net.normalize(update)
 
             weights -= args.lr * schedule * update
             weights -= args.lr * schedule * args.wd * weights
