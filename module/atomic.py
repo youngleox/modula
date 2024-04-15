@@ -73,7 +73,7 @@ class Conv2D(Module):
 
     @torch.no_grad()
     def normalize(self, vector):
-        return Vector(vector.weight / vector.weight.norm(dim=(0,1), keepdim=True))
+        return Vector(vector.weight / spectral_norm(vector.weight))
 
     def print_submodules(self):
         print(f"Conv2D module of shape {(self.out_features, self.in_features, self.k, self.k)} and mass {self.mass}.")
