@@ -8,6 +8,7 @@ def spectral_norm(p, num_steps=1):
     u = torch.randn_like(p[0])
 
     for _ in range(num_steps):
+        u /= u.norm(dim=0, keepdim=True)
         v = torch.einsum('ab..., b... -> a...', p, u)
         v /= v.norm(dim=0, keepdim=True)
         u = torch.einsum('a..., ab... -> b...', v, p)
