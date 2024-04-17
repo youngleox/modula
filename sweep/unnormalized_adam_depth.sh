@@ -21,6 +21,6 @@ for LR in 0.00012207031 0.00024414062 0.00048828125 0.0009765625 0.001953125 0.0
      export BETA1=0.9
      export BETA2=0.99
      export WD=0.01
-     sbatch --export=ALL sweep/run.sh
+     sbatch --export=ALL sweep/run_unnormalized.sh
 done
 done
