@@ -137,18 +137,22 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
-
-            update = mom1
-
+            
             if args.beta2 >= 0:
                 mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
-                update = update / mom2 ** 0.5
+                update = mom1 / mom2 ** 0.5
+            else:
+                update = mom1
 
             if args.normalize:
                 update = net.normalize(update)
 
             weights -= args.lr * schedule * update
-            weights -= args.lr * schedule * args.wd * weights
+
+            if args.normalize:
+                weights -= args.lr * schedule * args.wd * net.normalize(weights)
+            else:
+                weights -= args.lr * schedule * args.wd * weights
 
             weights.zero_grad()
 
