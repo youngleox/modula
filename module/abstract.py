@@ -91,8 +91,10 @@ class CompositeModule(Module):
             v0_normalized = m0.normalize(v0, target_norm=m0.mass / self.mass * target_norm / m1.sensitivity)
             v1_normalized = m1.normalize(v1, target_norm=m1.mass / self.mass * target_norm)
             return Vector((v0_normalized, v1_normalized))
-        else:
+        elif vector.length > 0:
             return vector * 0
+        else:
+            return vector
 
 
 class TupleModule(Module):
@@ -115,8 +117,10 @@ class TupleModule(Module):
             for vi, child in zip(vector, self.children):
                 normalized_child_vectors.append(child.normalize(vi, target_norm=child.mass / self.mass * target_norm))
             return Vector(tuple(normalized_child_vectors))
-        else:
+        elif vector.length > 0:
             return vector * 0
+        else:
+            return vector
 
 
 class ScalarMultiply(Module):
