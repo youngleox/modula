@@ -151,6 +151,8 @@ if __name__ == '__main__':
                 weights -= args.lr * schedule * update
                 weights -= args.lr * schedule * args.wd * weights
 
+            weights.require_grad()
+
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())
 
