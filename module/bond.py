@@ -9,8 +9,8 @@ class Bond(Module):
     def __init__(self):
         super().__init__()
         self.mass = 0
-        self.initialize = lambda _ : Vector(None)
-        self.normalize  = lambda _ : Vector(None)
+        self.initialize = lambda device : Vector(None)
+        self.normalize  = lambda vector, target_norm : Vector(None)
 
 
 class Identity(Bond):

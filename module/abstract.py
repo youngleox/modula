@@ -15,7 +15,7 @@ class Module:
     def initialize(self, device):
         raise NotImplementedError
 
-    def normalize(self, vector):
+    def normalize(self, vector, target_norm):
         raise NotImplementedError
 
     def tare(self, absolute=1, relative=None):
@@ -83,13 +83,13 @@ class CompositeModule(Module):
     def initialize(self, device):
         return Vector(tuple(child.initialize(device) for child in self.children))
 
-    def normalize(self, vector):
+    def normalize(self, vector, target_norm=1):
         m0, m1 = self.children
         v0, v1 = vector
 
         if self.mass > 0:
-            v0_normalized = m0.mass / self.mass / m1.sensitivity * m0.normalize(v0)
-            v1_normalized = m1.mass / self.mass * m1.normalize(v1)
+            v0_normalized = m0.normalize(v0, target_norm=m0.mass / self.mass * target_norm / m1.sensitivity)
+            v1_normalized = m1.normalize(v1, target_norm=m1.mass / self.mass * target_norm)
             return Vector((v0_normalized, v1_normalized))
         else:
             return vector * 0
@@ -109,11 +109,11 @@ class TupleModule(Module):
     def initialize(self, device):
         return Vector(tuple(child.initialize(device) for child in self.children))
 
-    def normalize(self, vector):
+    def normalize(self, vector, target_norm=1):
         if self.mass > 0:
             normalized_child_vectors = []
             for vi, child in zip(vector, self.children):
-                normalized_child_vectors.append(child.mass / self.mass * child.normalize(vi))
+                normalized_child_vectors.append(child.normalize(vi, target_norm=child.mass / self.mass * target_norm))
             return Vector(tuple(normalized_child_vectors))
         else:
             return vector * 0
@@ -124,8 +124,8 @@ class ScalarMultiply(Module):
         super().__init__()
         self.mass = 0
         self.sensitivity = abs(alpha)
-        self.initialize = lambda _ : Vector(None)
-        self.normalize  = lambda _ : Vector(None)
+        self.initialize = lambda device : Vector(None)
+        self.normalize  = lambda vector, target_norm : Vector(None)
         self.alpha = alpha
 
     def forward(self, x, w):
@@ -140,8 +140,8 @@ class Add(Module):
         super().__init__()
         self.mass = 0
         self.sensitivity = 1
-        self.initialize = lambda _ : Vector(None)
-        self.normalize  = lambda _ : Vector(None)
+        self.initialize = lambda device : Vector(None)
+        self.normalize  = lambda vector, target_norm : Vector(None)
 
     def forward(self, x, w):
         assert isinstance(x, tuple), "can only compose add with tuples"

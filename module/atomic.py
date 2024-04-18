@@ -42,8 +42,8 @@ class Linear(Module):
         return Vector(weight)
 
     @torch.no_grad()
-    def normalize(self, vector):
-        return Vector(vector.weight / spectral_norm(vector.weight))
+    def normalize(self, vector, target_norm):
+        return Vector(vector.weight / spectral_norm(vector.weight) * target_norm)
 
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
@@ -73,8 +73,8 @@ class Conv2D(Module):
         return Vector(weight)
 
     @torch.no_grad()
-    def normalize(self, vector):
-        return Vector(vector.weight / spectral_norm(vector.weight))
+    def normalize(self, vector, target_norm):
+        return Vector(vector.weight / spectral_norm(vector.weight) * target_norm)
 
     def print_submodules(self):
         print(f"Conv2D module of shape {(self.out_features, self.in_features, self.k, self.k)} and mass {self.mass}.")
@@ -102,8 +102,8 @@ class Embedding(Module):
         return Vector(weight)
 
     @torch.no_grad()
-    def normalize(self, vector):
-        return Vector(vector.weight / vector.weight.norm(dim=1, keepdim=True))
+    def normalize(self, vector, target_norm):
+        return Vector(vector.weight / vector.weight.norm(dim=1, keepdim=True) * target_norm)
 
     def print_submodules(self):
         print(f"Embedding module: {self.num_embedding} embeddings of size {self.embedding_dim}. Mass {self.mass}.")

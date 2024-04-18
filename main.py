@@ -133,28 +133,23 @@ if __name__ == '__main__':
 
         train_loss.backward()
 
-        schedule = 1 - step / args.train_steps
-
         with torch.no_grad():
-            mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
-            
             if args.beta2 >= 0:
+                mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
                 mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
                 update = mom1 / mom2 ** 0.5
             else:
+                mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
                 update = mom1
 
-            if args.normalize:
-                update = net.normalize(update)
-
-            weights -= args.lr * schedule * update
+            schedule = 1 - step / args.train_steps
 
             if args.normalize:
-                weights -= args.lr * schedule * args.wd * net.normalize(weights)
+                weights -= net.normalize(update,  target_norm=args.lr * schedule)
+                weights -= net.normalize(weights, target_norm=args.lr * schedule * args.wd)
             else:
+                weights -= args.lr * schedule * update
                 weights -= args.lr * schedule * args.wd * weights
-
-            weights.zero_grad()
 
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())
