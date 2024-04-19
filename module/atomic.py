@@ -16,7 +16,34 @@ def spectral_norm(p, num_steps=1):
 
 
 class Linear(Module):
-    def __init__(self, out_features, in_features, num_heads=None, mass=1):
+    def __init__(self, out_features, in_features, mass=1):
+        super().__init__()
+        self.mass = mass
+        self.sensitivity = 1
+        self.length = 1
+
+        self.out_features = out_features
+        self.in_features = in_features
+        self.scale = math.sqrt(out_features / in_features)
+
+    def forward(self, x, w):
+        return self.scale * torch.nn.functional.linear(x, w[0])
+
+    def initialize(self, device):
+        weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
+        torch.nn.init.orthogonal_(weight)
+        return [weight]
+
+    @torch.no_grad()
+    def normalize(self, w, target_norm):
+        return [w[0] / spectral_norm(w[0]) * target_norm]
+
+    def print_submodules(self):
+        print(f"Linear module of shape {(self.out_features, self.in_features)} and mass {self.mass}.")
+
+
+class MultiHeadedLinear(Module):
+    def __init__(self, out_features, in_features, num_heads, mass=1):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1
@@ -28,16 +55,11 @@ class Linear(Module):
         self.scale = math.sqrt(out_features / in_features)
 
     def forward(self, x, w):
-        if self.num_heads is None: x = x.unsqueeze(dim=-1)
-        x = self.scale * torch.einsum('ijh, ...jh -> ...ih', w[0], x)
-        if self.num_heads is None: x = x.squeeze(dim=-1)
-
-        return x
+        return self.scale * torch.einsum('ijh, ...jh -> ...ih', w[0], x)
 
     def initialize(self, device):
-        num_heads = 1 if self.num_heads is None else self.num_heads
-        weight = torch.empty((self.out_features, self.in_features, num_heads), device=device, requires_grad=True)
-        for head in range(num_heads):
+        weight = torch.empty((self.out_features, self.in_features, self.num_heads), device=device, requires_grad=True)
+        for head in range(self.num_heads):
             torch.nn.init.orthogonal_(weight[:,:,head])
         return [weight]
 

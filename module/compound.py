@@ -36,10 +36,10 @@ def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
 
 
 def Attention(num_heads, d_embed, d_query, d_value, context, causal):
-    Q = Linear(d_query, d_embed, num_heads)
-    K = Linear(d_query, d_embed, num_heads)
-    V = Linear(d_value, d_embed, num_heads)
-    W = Linear(d_embed, d_value, num_heads)
+    Q = MultiHeadedLinear(d_query, d_embed, num_heads)
+    K = MultiHeadedLinear(d_query, d_embed, num_heads)
+    V = MultiHeadedLinear(d_value, d_embed, num_heads)
+    W = MultiHeadedLinear(d_embed, d_value, num_heads)
 
     return Mean(dim=-1) @ W @ FunctionalAttention(causal) * 1/3 @ (Q, K, V) @ Duplicate(num_heads)
 
