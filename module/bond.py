@@ -2,15 +2,15 @@ import math
 import torch
 
 from module.abstract import Module
-from module.vector import Vector
 
 
 class Bond(Module):
     def __init__(self):
         super().__init__()
         self.mass = 0
-        self.initialize = lambda device : Vector(None)
-        self.normalize  = lambda vector, target_norm : Vector(None)
+        self.length = 0
+        self.initialize = lambda device : []
+        self.normalize  = lambda w, target_norm : []
 
 
 class Identity(Bond):

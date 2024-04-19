@@ -10,6 +10,7 @@ import pickle
 from tqdm.auto import trange
 from data.dataset import getIterator
 from module.compound import *
+from module.vector import Vector
 
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare']
@@ -107,10 +108,11 @@ if __name__ == '__main__':
 
     print(net)
 
-    weights = net.initialize(device = "cpu" if args.cpu else "cuda")
-    mom1 = 0 * weights
-    if args.beta2 >= 0:
-        mom2 = 0 * weights
+    weights = Vector(net.initialize(device = "cpu" if args.cpu else "cuda"))
+    with torch.no_grad():
+        mom1 = 0 * weights
+        if args.beta2 >= 0:
+            mom2 = 0 * weights
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
@@ -134,12 +136,14 @@ if __name__ == '__main__':
         train_loss.backward()
 
         with torch.no_grad():
+            grad = weights.grad()
+
             if args.beta2 >= 0:
-                mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
-                mom2 += (1-args.beta2)**(step/(step+1)) * (weights.grad()**2 - mom2)
+                mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
+                mom2 += (1-args.beta2)**(step/(step+1)) * (grad**2 - mom2)
                 update = mom1 / mom2 ** 0.5
             else:
-                mom1 += (1-args.beta1)**(step/(step+1)) * (weights.grad()    - mom1)
+                mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
                 update = mom1
 
             schedule = 1 - step / args.train_steps
@@ -151,7 +155,7 @@ if __name__ == '__main__':
                 weights -= args.lr * schedule * update
                 weights -= args.lr * schedule * args.wd * weights
 
-            weights.require_grad()
+            weights.zero_grad()
 
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())

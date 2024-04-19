@@ -1,7 +1,6 @@
 import math
 import torch
 
-from module.vector import Vector
 from module.abstract import Module
 
 def spectral_norm(p, num_steps=1):
@@ -21,6 +20,7 @@ class Linear(Module):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1
+        self.length = 1
 
         self.num_heads = num_heads
         self.out_features = out_features
@@ -29,7 +29,7 @@ class Linear(Module):
 
     def forward(self, x, w):
         if self.num_heads is None: x = x.unsqueeze(dim=-1)
-        x = self.scale * torch.einsum('ijh, ...jh -> ...ih', w.weight, x)
+        x = self.scale * torch.einsum('ijh, ...jh -> ...ih', w[0], x)
         if self.num_heads is None: x = x.squeeze(dim=-1)
 
         return x
@@ -39,11 +39,11 @@ class Linear(Module):
         weight = torch.empty((self.out_features, self.in_features, num_heads), device=device, requires_grad=True)
         for head in range(num_heads):
             torch.nn.init.orthogonal_(weight[:,:,head])
-        return Vector(weight)
+        return [weight]
 
     @torch.no_grad()
-    def normalize(self, vector, target_norm):
-        return Vector(vector.weight / spectral_norm(vector.weight) * target_norm)
+    def normalize(self, w, target_norm):
+        return [w[0] / spectral_norm(w[0]) * target_norm]
 
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
@@ -54,6 +54,7 @@ class Conv2D(Module):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1
+        self.length = 1
 
         self.out_channels = out_channels
         self.in_channels = in_channels
@@ -63,18 +64,18 @@ class Conv2D(Module):
         self.scale = math.sqrt(out_channels / in_channels) / (kernel_size ** 2)
 
     def forward(self, x, w):
-        return self.scale * torch.nn.functional.conv2d(x, w.weight, None, self.stride, self.pad)
+        return self.scale * torch.nn.functional.conv2d(x, w[0], None, self.stride, self.pad)
 
     def initialize(self, device):
         weight = torch.empty((self.out_channels, self.in_channels, self.k, self.k), device=device, requires_grad=True)
         for kx in range(self.k):
             for ky in range(self.k):
                 torch.nn.init.orthogonal_(weight[:,:,kx,ky])
-        return Vector(weight)
+        return [weight]
 
     @torch.no_grad()
-    def normalize(self, vector, target_norm):
-        return Vector(vector.weight / spectral_norm(vector.weight) * target_norm)
+    def normalize(self, w, target_norm):
+        return [w[0] / spectral_norm(w[0]) * target_norm]
 
     def print_submodules(self):
         print(f"Conv2D module of shape {(self.out_features, self.in_features, self.k, self.k)} and mass {self.mass}.")
@@ -86,6 +87,7 @@ class Embedding(Module):
         super().__init__()
         self.mass = mass
         self.sensitivity = 1
+        self.length = 1
 
         self.num_embedding = num_embedding
         self.embedding_dim = embedding_dim
@@ -93,17 +95,17 @@ class Embedding(Module):
         self.scale = math.sqrt(embedding_dim)
 
     def forward(self, x, w):
-        return self.scale * torch.nn.functional.embedding(x, w.weight)
+        return self.scale * torch.nn.functional.embedding(x, w[0])
 
     def initialize(self, device):
         weight = torch.empty((self.num_embedding, self.embedding_dim), device=device, requires_grad=True)
         torch.nn.init.normal_(weight)
         weight.data /= self.weight.norm(dim=1, keepdim=True)
-        return Vector(weight)
+        return [weight]
 
     @torch.no_grad()
-    def normalize(self, vector, target_norm):
-        return Vector(vector.weight / vector.weight.norm(dim=1, keepdim=True) * target_norm)
+    def normalize(self, w, target_norm):
+        return [w[0] / w[0].norm(dim=1, keepdim=True) * target_norm]
 
     def print_submodules(self):
         print(f"Embedding module: {self.num_embedding} embeddings of size {self.embedding_dim}. Mass {self.mass}.")
