@@ -109,6 +109,8 @@ if __name__ == '__main__':
     print(net)
 
     weights = Vector(net.initialize(device = "cpu" if args.cpu else "cuda"))
+    normalizers = net.initialize_normalizer()
+    
     with torch.no_grad():
         mom1 = 0 * weights
         if args.beta2 >= 0:
@@ -147,13 +149,13 @@ if __name__ == '__main__':
                 update = mom1
 
             schedule = 1 - step / args.train_steps
-
+            
             if args.normalize:
-                weights -= net.normalize(update,  target_norm=args.lr * schedule)
-                weights -= net.normalize(weights, target_norm=args.lr * schedule * args.wd)
+                update = Vector([n.normalize(u+w*args.wd) for n, u, w in zip(normalizers,update.tensor_list, weights.tensor_list)])
+                weights -= update * args.lr * schedule
             else:
                 weights -= args.lr * schedule * update
-                weights -= args.lr * schedule * args.wd * weights
+                weights -= args.lr * schedule * args.wd * weights               
 
             weights.zero_grad()
 
