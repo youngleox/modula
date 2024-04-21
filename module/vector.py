@@ -12,13 +12,23 @@ class Vector:
     allowing weight updates to be implemented using simple algebra.
     """
 
-    def __init__(self, tensor_list):
+    def __init__(self, tensor_or_tensor_list = []):
         """Stores a list of tensors."""
-        self.tensor_list = tensor_list
+        if isinstance(tensor_or_tensor_list, torch.Tensor):
+            self.tensor_list = [tensor_or_tensor_list]
+        elif isinstance(tensor_or_tensor_list, list):
+            self.tensor_list = tensor_or_tensor_list
+        elif isinstance(tensor_or_tensor_list, tuple):
+            self.tensor_list = tensor_or_tensor_list
+        else:
+            raise NotImplementedError
 
     def __getitem__(self, item):
         """Allows Vectors to be indexed and looped over."""
         return self.tensor_list[item]
+
+    def __len__(self):
+        return len(self.tensor_list)
 
     def grad(self):
         """Returns the gradient list of this Vector."""
@@ -33,20 +43,27 @@ class Vector:
         """Lets us print the Vector."""
         return str([t for t in self])
 
+    def __and__(self, other):
+        """Conatenate two Vectors."""
+        return Vector(self.tensor_list + other.tensor_list)
+
     def __iadd__(self, other):
         """In-place add."""
+        if len(self) == 0: return self
         if isinstance(other, Vector): other = other.tensor_list
         torch._foreach_add_(self.tensor_list, other)
         return self
 
     def __add__(self, other):
         """Add."""
+        if len(self) == 0: return Vector()
         if isinstance(other, Vector): other = other.tensor_list
         new_list = torch._foreach_add(self.tensor_list, other)
         return Vector(new_list)
 
     def __mul__(self, other):
         """Multiply."""
+        if len(self) == 0: return Vector()
         if isinstance(other, Vector): other = other.tensor_list
         new_list = torch._foreach_mul(self.tensor_list, other)
         return Vector(new_list)
@@ -57,42 +74,49 @@ class Vector:
 
     def __imul__(self, other):
         """In-place multiply."""
+        if len(self) == 0: return self
         if isinstance(other, Vector): other = other.tensor_list
         torch._foreach_mul_(self.tensor_list, other)
         return self
 
     def __isub__(self, other):
         """In-place subtract."""
+        if len(self) == 0: return self
         if isinstance(other, Vector): other = other.tensor_list
         torch._foreach_sub_(self.tensor_list, other)
         return self
 
     def __sub__(self, other):
         """Subtract."""
+        if len(self) == 0: return Vector()
         if isinstance(other, Vector): other = other.tensor_list
         new_list = torch._foreach_sub(self.tensor_list, other)
         return Vector(new_list)
 
     def __itruediv__(self, other):
         """In-place division."""
+        if len(self) == 0: return self
         if isinstance(other, Vector): other = other.tensor_list
         torch._foreach_div_(self.tensor_list, other)
         return self
 
     def __truediv__(self, other):
         """Division."""
+        if len(self) == 0: return Vector()
         if isinstance(other, Vector): other = other.tensor_list
         new_list = torch._foreach_div(self.tensor_list, other)
         return Vector(new_list)
 
     def __ipow__(self, other):
         """In-place power."""
+        if len(self) == 0: return self
         if isinstance(other, Vector): other = other.tensor_list
         torch._foreach_pow_(self.tensor_list, other)
         return self
 
     def __pow__(self, other):
         """Power."""
+        if len(self) == 0: return Vector()
         if isinstance(other, Vector): other = other.tensor_list
         new_list = torch._foreach_pow(self.tensor_list, other)
         return Vector(new_list)

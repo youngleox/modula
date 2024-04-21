@@ -10,7 +10,6 @@ import pickle
 from tqdm.auto import trange
 from data.dataset import getIterator
 from module.compound import *
-from module.vector import Vector
 
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare']
@@ -108,7 +107,7 @@ if __name__ == '__main__':
 
     print(net)
 
-    weights = Vector(net.initialize(device = "cpu" if args.cpu else "cuda"))
+    weights = net.initialize(device = "cpu" if args.cpu else "cuda")
     with torch.no_grad():
         mom1 = 0 * weights
         if args.beta2 >= 0:
@@ -150,10 +149,10 @@ if __name__ == '__main__':
 
             if args.normalize:
                 weights -= net.normalize(update,  target_norm=args.lr * schedule)
-                weights -= net.normalize(weights, target_norm=args.lr * schedule * args.wd)
+                # weights -= net.normalize(weights, target_norm=args.lr * schedule * args.wd)
             else:
                 weights -= args.lr * schedule * update
-                weights -= args.lr * schedule * args.wd * weights
+                # weights -= args.lr * schedule * args.wd * weights
 
             weights.zero_grad()
 

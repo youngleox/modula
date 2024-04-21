@@ -1,5 +1,6 @@
 import copy
 
+from module.vector import Vector
 
 class Module:
     def __init__(self):
@@ -82,19 +83,19 @@ class CompositeModule(Module):
 
     def initialize(self, device):
         m0, m1 = self.children
-        return m0.initialize(device) + m1.initialize(device)
+        return m0.initialize(device) & m1.initialize(device)
 
     def normalize(self, w, target_norm=1):
         m0, m1 = self.children
-        w0 = w[:m0.length]
-        w1 = w[m0.length:]
+        w0 = Vector(w[:m0.length])
+        w1 = Vector(w[m0.length:])
 
         if self.mass > 0:
             w0 = m0.normalize(w0, target_norm=m0.mass / self.mass * target_norm / m1.sensitivity)
             w1 = m1.normalize(w1, target_norm=m1.mass / self.mass * target_norm)
-            return w0 + w1
+            return w0 & w1
         else:
-            return [0] * self.length
+            return w * 0
 
 
 class TupleModule(Module):
@@ -114,21 +115,21 @@ class TupleModule(Module):
         return output
 
     def initialize(self, device):
-        tensor_list = []
+        vector = Vector()
         for child in self.children:
-            tensor_list += child.initialize(device)
-        return tensor_list
+            vector &= child.initialize(device)
+        return vector
 
     def normalize(self, w, target_norm=1):
         if self.mass > 0:
-            tensor_list = []
+            vector = Vector()
             for child in self.children:
-                w_child = w[:child.length]
-                tensor_list += child.normalize(w_child, target_norm=child.mass / self.mass * target_norm)
-                w = w[child.length:]
-            return tensor_list
+                w_child = Vector(w[:child.length])
+                vector &= child.normalize(w_child, target_norm=child.mass / self.mass * target_norm)
+                w = Vector(w[child.length:])
+            return vector
         else:
-            return [0] * self.length
+            return w * 0
 
 
 class ScalarMultiply(Module):
@@ -137,8 +138,8 @@ class ScalarMultiply(Module):
         self.mass = 0
         self.sensitivity = abs(alpha)
         self.length = 0
-        self.initialize = lambda device : []
-        self.normalize  = lambda w, target_norm : []
+        self.initialize = lambda device : Vector()
+        self.normalize  = lambda w, target_norm : Vector()
         self.alpha = alpha
 
     def forward(self, x, _):
@@ -154,9 +155,6 @@ class Add(Module):
         self.mass = 0
         self.sensitivity = 1
         self.length = 0
-        self.initialize = lambda device : []
-        self.normalize  = lambda w, target_norm : []
-
-    def forward(self, x, w):
-        assert isinstance(x, list), "can only compose add with tuple modules"
-        return sum(xi for xi in x)
+        self.initialize = lambda device : Vector()
+        self.normalize  = lambda w, target_norm : Vector()
+        self.forward    = lambda x, w : sum(x)

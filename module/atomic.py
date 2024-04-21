@@ -2,6 +2,7 @@ import math
 import torch
 
 from module.abstract import Module
+from module.vector import Vector
 
 def spectral_norm(p, num_steps=1):
     u = torch.randn_like(p[0])
@@ -32,11 +33,11 @@ class Linear(Module):
     def initialize(self, device):
         weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(weight)
-        return [weight]
+        return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
-        return [w[0] / spectral_norm(w[0]) * target_norm]
+        return Vector(w[0] / spectral_norm(w[0]) * target_norm)
 
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} and mass {self.mass}.")
@@ -61,11 +62,11 @@ class MultiHeadedLinear(Module):
         weight = torch.empty((self.out_features, self.in_features, self.num_heads), device=device, requires_grad=True)
         for head in range(self.num_heads):
             torch.nn.init.orthogonal_(weight[:,:,head])
-        return [weight]
+        return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
-        return [w[0] / spectral_norm(w[0]) * target_norm]
+        return Vector(w[0] / spectral_norm(w[0]) * target_norm)
 
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
@@ -93,11 +94,11 @@ class Conv2D(Module):
         for kx in range(self.k):
             for ky in range(self.k):
                 torch.nn.init.orthogonal_(weight[:,:,kx,ky])
-        return [weight]
+        return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
-        return [w[0] / spectral_norm(w[0]) * target_norm]
+        return Vector(w[0] / spectral_norm(w[0]) * target_norm)
 
     def print_submodules(self):
         print(f"Conv2D module of shape {(self.out_features, self.in_features, self.k, self.k)} and mass {self.mass}.")
@@ -123,11 +124,11 @@ class Embedding(Module):
         weight = torch.empty((self.num_embedding, self.embedding_dim), device=device, requires_grad=True)
         torch.nn.init.normal_(weight)
         weight.data /= self.weight.norm(dim=1, keepdim=True)
-        return [weight]
+        return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
-        return [w[0] / w[0].norm(dim=1, keepdim=True) * target_norm]
+        return Vector(w[0] / w[0].norm(dim=1, keepdim=True) * target_norm)
 
     def print_submodules(self):
         print(f"Embedding module: {self.num_embedding} embeddings of size {self.embedding_dim}. Mass {self.mass}.")
