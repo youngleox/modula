@@ -14,9 +14,6 @@ class Module:
     def initialize(self, device):
         raise NotImplementedError
 
-    def initialize_normalizer(self, target_norm):
-        raise NotImplementedError
-    
     def normalize(self, w, target_norm):
         raise NotImplementedError
 
@@ -87,16 +84,6 @@ class CompositeModule(Module):
         m0, m1 = self.children
         return m0.initialize(device) + m1.initialize(device)
 
-    def initialize_normalizer(self, target_norm=1):
-        m0, m1 = self.children
-
-        if self.mass > 0:
-            n0 = m0.initialize_normalizer(m0.mass / self.mass * target_norm / m1.sensitivity)
-            n1 = m1.initialize_normalizer(m1.mass / self.mass * target_norm)
-            return n0 + n1
-        else:
-            return []
-        
     def normalize(self, w, target_norm=1):
         m0, m1 = self.children
         w0 = w[:m0.length]
@@ -108,7 +95,7 @@ class CompositeModule(Module):
             return w0 + w1
         else:
             return [0] * self.length
-    
+
 
 class TupleModule(Module):
     def __init__(self, tuple_of_modules):
@@ -132,15 +119,6 @@ class TupleModule(Module):
             tensor_list += child.initialize(device)
         return tensor_list
 
-    def initialize_normalizer(self, target_norm=1):
-        if self.mass > 0:
-            normalizers = []
-            for child in self.children:
-                normalizers += child.initialize_normalizer(child.mass / self.mass * target_norm)
-            return normalizers
-        else:
-            return []
-        
     def normalize(self, w, target_norm=1):
         if self.mass > 0:
             tensor_list = []
@@ -161,7 +139,6 @@ class ScalarMultiply(Module):
         self.length = 0
         self.initialize = lambda device : []
         self.normalize  = lambda w, target_norm : []
-        self.initialize_normalizer = lambda target_norm : []
         self.alpha = alpha
 
     def forward(self, x, _):
@@ -179,8 +156,7 @@ class Add(Module):
         self.length = 0
         self.initialize = lambda device : []
         self.normalize  = lambda w, target_norm : []
-        self.initialize_normalizer = lambda target_norm : []
-        
+
     def forward(self, x, w):
         assert isinstance(x, list), "can only compose add with tuple modules"
         return sum(xi for xi in x)

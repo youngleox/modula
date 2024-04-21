@@ -3,33 +3,17 @@ import torch
 
 from module.abstract import Module
 
-def spectral_norm(p, u, v, num_steps=1, eps=1e-12):
-    if not p.dim() > 1:
-        return p.norm(), u, v
+def spectral_norm(p, num_steps=1):
+    u = torch.randn_like(p[0])
+
     for _ in range(num_steps):
-        v = torch.nn.functional.normalize(torch.mv(p.t(), u), dim=0, eps=eps, out=v)
-        u = torch.nn.functional.normalize(torch.mv(p, v), dim=0, eps=eps, out=u)
-    sigma = torch.dot(u, torch.mv(p, v))
-    return sigma, u, v
+        u /= u.norm(dim=0, keepdim=True)
+        v = torch.einsum('ab..., b... -> a...', p, u)
+        v /= v.norm(dim=0, keepdim=True)
+        u = torch.einsum('a..., ab... -> b...', v, p)
 
-class SpectralNormalizer:
-    def __init__(self, target_norm, mode='linear', use_cache=1):
-        assert mode in ['linear', 'conv2d', 'embedding']
-        self.mode = mode
-        self.target_norm = target_norm
-        self.use_cache = use_cache
-        self.u, self.v = None, None
+    return u.norm(dim=0, keepdim=True)
 
-    def normalize(self, w):
-        if self.mode == 'linear':
-            if self.u is None and self.use_cache:
-                self.u = torch.randn_like(w[:,0])
-                self.v = torch.randn_like(w[0])
-            norm, self.u.data, self.v.data = spectral_norm(w, self.u, self.v)
-            return w / norm * self.target_norm
-        
-        elif self.mode == 'embedding':
-            return w[0] / w[0].norm(dim=1, keepdim=True) * self.target_norm
 
 class Linear(Module):
     def __init__(self, out_features, in_features, mass=1):
@@ -42,8 +26,6 @@ class Linear(Module):
         self.in_features = in_features
         self.scale = math.sqrt(out_features / in_features)
 
-        self.normalizer = None
-
     def forward(self, x, w):
         return self.scale * torch.nn.functional.linear(x, w[0])
 
@@ -52,11 +34,6 @@ class Linear(Module):
         torch.nn.init.orthogonal_(weight)
         return [weight]
 
-    def initialize_normalizer(self, target_norm):
-        if self.normalizer is None:
-            self.normalizer = SpectralNormalizer(target_norm=target_norm)
-        return [self.normalizer]
-    
     @torch.no_grad()
     def normalize(self, w, target_norm):
         return [w[0] / spectral_norm(w[0]) * target_norm]

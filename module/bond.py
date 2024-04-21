@@ -11,7 +11,7 @@ class Bond(Module):
         self.length = 0
         self.initialize = lambda device : []
         self.normalize  = lambda w, target_norm : []
-        self.initialize_normalizer = lambda target_norm : []
+
 
 class Identity(Bond):
     def __init__(self):
