@@ -18,6 +18,9 @@ class Module:
     def normalize(self, w, target_norm):
         raise NotImplementedError
 
+    def regularize(self, w, strength):
+        raise NotImplementedError
+
     def tare(self, absolute=1, relative=None):
         if relative is not None:
             self.mass *= relative
@@ -95,6 +98,14 @@ class CompositeModule(Module):
         else:
             w *= 0
 
+    def regularize(self, w, strength):
+        if self.mass > 0:
+            m0, m1 = self.children
+            w0 = Vector(w[:m0.length])
+            w1 = Vector(w[m0.length:])
+            m0.regularize(w0, strength=m0.mass / self.mass * strength / m1.sensitivity)
+            m1.regularize(w1, strength=m1.mass / self.mass * strength)
+
 
 class TupleModule(Module):
     def __init__(self, tuple_of_modules):
@@ -127,6 +138,13 @@ class TupleModule(Module):
         else:
             w *= 0
 
+    def regularize(self, w, strength):
+        if self.mass > 0:
+            for child in self.children:
+                w_child = Vector(w[:child.length])
+                child.regularize(w_child, strength=child.mass / self.mass * strength)
+                w = Vector(w[child.length:])
+
 
 class ScalarMultiply(Module):
     def __init__(self, alpha):
@@ -136,6 +154,7 @@ class ScalarMultiply(Module):
         self.length = 0
         self.initialize = lambda device : Vector()
         self.normalize  = lambda w, target_norm : None
+        self.regularize = lambda w, strength : None
         self.alpha = alpha
 
     def forward(self, x, _):
@@ -153,4 +172,5 @@ class Add(Module):
         self.length = 0
         self.initialize = lambda device : Vector()
         self.normalize  = lambda w, target_norm : None
+        self.regularize = lambda w, strength : None
         self.forward    = lambda x, w : sum(x)

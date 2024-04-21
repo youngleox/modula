@@ -40,6 +40,11 @@ class Linear(Module):
         weight = w[0]
         weight *= target_norm / spectral_norm(weight)
 
+    @torch.no_grad()
+    def regularize(self, w, strength):
+        weight = w[0]
+        weight *= 1 - strength
+
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} and mass {self.mass}.")
 
@@ -69,6 +74,11 @@ class MultiHeadedLinear(Module):
     def normalize(self, w, target_norm):
         weight = w[0]
         weight *= target_norm / spectral_norm(weight)
+
+    @torch.no_grad()
+    def regularize(self, w, strength):
+        weight = w[0]
+        weight *= 1 - strength
 
     def print_submodules(self):
         print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
@@ -103,6 +113,11 @@ class Conv2D(Module):
         weight = w[0]
         weight *= target_norm / spectral_norm(weight)
 
+    @torch.no_grad()
+    def regularize(self, w, strength):
+        weight = w[0]
+        weight *= 1 - strength
+
     def print_submodules(self):
         print(f"Conv2D module of shape {(self.out_features, self.in_features, self.k, self.k)} and mass {self.mass}.")
 
@@ -133,6 +148,11 @@ class Embedding(Module):
     def normalize(self, w, target_norm):
         weight = w[0]
         weight *= target_norm / weight.norm(dim=1, keepdim=True)
+
+    @torch.no_grad()
+    def regularize(self, w, strength):
+        weight = w[0]
+        weight *= 1 - strength
 
     def print_submodules(self):
         print(f"Embedding module: {self.num_embedding} embeddings of size {self.embedding_dim}. Mass {self.mass}.")
