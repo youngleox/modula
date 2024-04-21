@@ -86,16 +86,14 @@ class CompositeModule(Module):
         return m0.initialize(device) & m1.initialize(device)
 
     def normalize(self, w, target_norm=1):
-        m0, m1 = self.children
-        w0 = Vector(w[:m0.length])
-        w1 = Vector(w[m0.length:])
-
         if self.mass > 0:
-            w0 = m0.normalize(w0, target_norm=m0.mass / self.mass * target_norm / m1.sensitivity)
-            w1 = m1.normalize(w1, target_norm=m1.mass / self.mass * target_norm)
-            return w0 & w1
+            m0, m1 = self.children
+            w0 = Vector(w[:m0.length])
+            w1 = Vector(w[m0.length:])
+            m0.normalize(w0, target_norm=m0.mass / self.mass * target_norm / m1.sensitivity)
+            m1.normalize(w1, target_norm=m1.mass / self.mass * target_norm)
         else:
-            return w * 0
+            w *= 0
 
 
 class TupleModule(Module):
@@ -122,14 +120,12 @@ class TupleModule(Module):
 
     def normalize(self, w, target_norm=1):
         if self.mass > 0:
-            vector = Vector()
             for child in self.children:
                 w_child = Vector(w[:child.length])
-                vector &= child.normalize(w_child, target_norm=child.mass / self.mass * target_norm)
+                child.normalize(w_child, target_norm=child.mass / self.mass * target_norm)
                 w = Vector(w[child.length:])
-            return vector
         else:
-            return w * 0
+            w *= 0
 
 
 class ScalarMultiply(Module):
@@ -139,7 +135,7 @@ class ScalarMultiply(Module):
         self.sensitivity = abs(alpha)
         self.length = 0
         self.initialize = lambda device : Vector()
-        self.normalize  = lambda w, target_norm : Vector()
+        self.normalize  = lambda w, target_norm : None
         self.alpha = alpha
 
     def forward(self, x, _):
@@ -156,5 +152,5 @@ class Add(Module):
         self.sensitivity = 1
         self.length = 0
         self.initialize = lambda device : Vector()
-        self.normalize  = lambda w, target_norm : Vector()
+        self.normalize  = lambda w, target_norm : None
         self.forward    = lambda x, w : sum(x)

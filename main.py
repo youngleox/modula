@@ -148,11 +148,14 @@ if __name__ == '__main__':
             schedule = 1 - step / args.train_steps
 
             if args.normalize:
-                weights -= net.normalize(update,  target_norm=args.lr * schedule)
-                # weights -= net.normalize(weights, target_norm=args.lr * schedule * args.wd)
-            else:
-                weights -= args.lr * schedule * update
-                # weights -= args.lr * schedule * args.wd * weights
+                net.normalize(update)
+
+            weights -= args.lr * schedule * update
+
+            # if args.normalize:
+            #     net.regularize(weights)
+            # else:
+            #     weights *= 1 - args.lr * schedule * args.wd
 
             weights.zero_grad()
 

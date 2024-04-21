@@ -11,7 +11,7 @@ class Bond(Module):
         self.mass = 0
         self.length = 0
         self.initialize = lambda device : Vector()
-        self.normalize  = lambda w, target_norm : Vector()
+        self.normalize  = lambda w, target_norm : None
 
 
 class Identity(Bond):
