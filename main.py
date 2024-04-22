@@ -143,7 +143,7 @@ if __name__ == '__main__':
                 update = mom1 / mom2 ** 0.5
             else:
                 mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
-                update = mom1
+                update = mom1 * 1.0
 
             schedule = 1 - step / args.train_steps
 
