@@ -29,9 +29,10 @@ class Linear(Module):
         weight = w[0]
         if not hasattr(self, "u"):
             self.u = torch.randn_like(weight[0])
-        v = torch.mv(weight, self.u)
-        v /= v.norm()
-        self.u = torch.mv(weight.t(), v)
+            self.v = torch.empty_like(weight[:,0])
+        torch.mv(weight, self.u, out=self.v)
+        self.v /= self.v.norm()
+        torch.mv(weight.t(), self.v, out=self.u)
         weight *= target_norm / self.u.norm()
 
     @torch.no_grad()
