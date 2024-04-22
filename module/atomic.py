@@ -4,17 +4,6 @@ import torch
 from module.abstract import Module
 from module.vector import Vector
 
-def spectral_norm(p, num_steps=1):
-    u = torch.randn_like(p[0])
-
-    for _ in range(num_steps):
-        u /= u.norm(dim=0, keepdim=True)
-        v = torch.einsum('ab..., b... -> a...', p, u)
-        v /= v.norm(dim=0, keepdim=True)
-        u = torch.einsum('a..., ab... -> b...', v, p)
-
-    return u.norm(dim=0, keepdim=True)
-
 
 class Linear(Module):
     def __init__(self, out_features, in_features, mass=1):
@@ -38,7 +27,12 @@ class Linear(Module):
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        weight *= target_norm / spectral_norm(weight)
+        if not hasattr(self, "u"):
+            self.u = torch.randn_like(weight[0])
+        v = torch.mv(weight, self.u)
+        v /= v.norm()
+        self.u = torch.mv(weight.t(), v)
+        weight *= target_norm / self.u.norm()
 
     @torch.no_grad()
     def regularize(self, w, strength):
@@ -73,7 +67,12 @@ class MultiHeadedLinear(Module):
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        weight *= target_norm / spectral_norm(weight)
+        if not hasattr(self, "u"):
+            self.u = torch.randn_like(weight[0])
+        v = torch.einsum('ab..., b... -> a...', weight, self.u)
+        v /= v.norm(dim=0, keepdim=True)
+        self.u = torch.einsum('a..., ab... -> b...', v, weight)
+        weight *= target_norm / self.u.norm(dim=0, keepdim=True)
 
     @torch.no_grad()
     def regularize(self, w, strength):
@@ -111,7 +110,12 @@ class Conv2D(Module):
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        weight *= target_norm / spectral_norm(weight)
+        if not hasattr(self, "u"):
+            self.u = torch.randn_like(weight[0])
+        v = torch.einsum('ab..., b... -> a...', weight, self.u)
+        v /= v.norm(dim=0, keepdim=True)
+        self.u = torch.einsum('a..., ab... -> b...', v, weight)
+        weight *= target_norm / self.u.norm(dim=0, keepdim=True)
 
     @torch.no_grad()
     def regularize(self, w, strength):
