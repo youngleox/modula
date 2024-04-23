@@ -14,7 +14,6 @@ from module.compound import *
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare']
 losses        = ['mse', 'xent']
-optims        = ['mgd', 'adamw']
 
 parser = argparse.ArgumentParser()
 
@@ -40,10 +39,11 @@ parser.add_argument('--d_query',        type=int,   default=16   )
 parser.add_argument('--d_value',        type=int,   default=16   )
 
 # training
-parser.add_argument('--optim',          type=str,   default='mgd',      choices=optims)
+parser.add_argument('--normalize',      action='store_true'      )
 parser.add_argument('--loss',           type=str,   default='xent',     choices=losses)
 parser.add_argument('--lr',             type=float, default=0.5  )
-parser.add_argument('--beta',           type=float, default=0.9  )
+parser.add_argument('--beta1',          type=float, default=0.9  )
+parser.add_argument('--beta2',          type=float, default=0.99 )
 parser.add_argument('--wd',             type=float, default=0.01 )
 
 def evalute(output, data, target):
@@ -107,10 +107,11 @@ if __name__ == '__main__':
 
     print(net)
 
-    net.initialize(device = "cpu" if args.cpu else "cuda")
-
-    if args.optim == "adamw":
-        optim = torch.optim.AdamW(net.parameters, lr=args.lr, betas=(args.beta, 0.999), weight_decay=args.wd)
+    weights = net.initialize(device = "cpu" if args.cpu else "cuda")
+    with torch.no_grad():
+        mom1 = 0 * weights
+        if args.beta2 >= 0:
+            mom2 = 0 * weights
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
@@ -120,7 +121,7 @@ if __name__ == '__main__':
             test_loss = test_acc = 0
             for _ in range(args.test_steps):
                 data, target = getBatch(train = False)
-                with torch.no_grad(): loss, acc = evalute(net.forward(data), data, target)
+                with torch.no_grad(): loss, acc = evalute(net.forward(data, weights), data, target)
 
                 test_loss += loss
                 test_acc += acc
@@ -129,17 +130,33 @@ if __name__ == '__main__':
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
         data, target = getBatch(train = True)
-        train_loss, train_acc = evalute(net.forward(data), data, target)
+        train_loss, train_acc = evalute(net.forward(data, weights), data, target)
 
         train_loss.backward()
 
-        schedule = 1 - step / args.train_steps
-        if args.optim == "mgd":
-            net.update(lr=args.lr*schedule, hps={"beta":args.beta, "wd":args.wd})
-        else:
-            for g in optim.param_groups: g['lr'] = args.lr*schedule
-            optim.step()
-            optim.zero_grad()
+        with torch.no_grad():
+            grad = weights.grad()
+
+            if args.beta2 >= 0:
+                mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
+                mom2 += (1-args.beta2)**(step/(step+1)) * (grad**2 - mom2)
+                update = mom1 / mom2 ** 0.5
+            else:
+                mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
+                update = mom1 * 1.0
+
+            schedule = 1 - step / args.train_steps
+
+            if args.normalize:
+                net.normalize(update, target_norm = args.lr * schedule)
+                weights -= update
+                net.regularize(weights, strength = args.lr * schedule * args.wd)
+            else:
+                update *= args.lr * schedule
+                weights -= update
+                weights *= 1 - args.lr * schedule * args.wd
+
+            weights.zero_grad()
 
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())
