@@ -2,7 +2,6 @@ import torch
 
 from module.atomic import Linear
 from module.bond   import Identity, ReLU, Abs, MeanSubtract, RMSDivide
-from module.vector import cosine_similarity
 
 # set the device
 device = "cpu"
@@ -10,7 +9,7 @@ device = "cpu"
 # optimisation hyperparameters
 beta1 = 0.9
 beta2 = 0.99
-lr = 0.001
+lr = 0.01
 wd = 0.01
 
 # set the network size
@@ -33,7 +32,8 @@ net = Linear(output_dim, width) @ blocks @ Linear(width, input_dim)
 
 # initialise the weights and optimisation state
 weights = net.initialize(device=device)
-mom1 = mom2 = old_grad = 0 * weights
+mom1 = 0 * weights
+mom2 = 0 * weights
 
 # train forever
 for step, _ in enumerate(iter(lambda:0,1)):
@@ -42,13 +42,19 @@ for step, _ in enumerate(iter(lambda:0,1)):
     loss.backward()
 
     with torch.no_grad():
-        lr *= 1 + cosine_similarity(old_grad, old_grad := weights.grad())
+        grad = weights.grad()
 
-        mom1 += (1-beta1) * (weights.grad()    - mom1)
-        mom2 += (1-beta2) * (weights.grad()**2 - mom2)
+        mom1 += (1-beta1) * (grad    - mom1)
+        mom2 += (1-beta2) * (grad**2 - mom2)
 
-        weights -= lr * net.normalize(mom1 / mom2 ** 0.5)
-        weights -= lr * wd * weights
+        weights.zero_grad()
+
+        update = mom1 / mom2 ** 0.5
+        net.normalize(update)
+
+        weights -= lr * update
+
+        net.regularize(weights, strength = lr * wd)
 
     if step % 50 == 0:
         print(step, '\t', f"{loss.item():.4}", '\t', f"{lr:.4}")
