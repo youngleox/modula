@@ -146,7 +146,7 @@ class Embedding(Module):
     def initialize(self, device):
         weight = torch.empty((self.num_embedding, self.embedding_dim), device=device, requires_grad=True)
         torch.nn.init.normal_(weight)
-        weight.data /= self.weight.norm(dim=1, keepdim=True)
+        weight.data /= weight.norm(dim=1, keepdim=True)
         return Vector(weight)
 
     @torch.no_grad()
