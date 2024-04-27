@@ -157,7 +157,7 @@ class Embedding(Module):
     @torch.no_grad()
     def regularize(self, w, strength):
         weight = w[0]
-        weight *= 1 - strength
+        weight /= weight.norm(dim=1, keepdim=True)
 
     def print_submodules(self):
         print(f"Embedding module: {self.num_embedding} embeddings of size {self.embedding_dim}. Mass {self.mass}.")
