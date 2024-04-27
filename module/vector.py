@@ -39,6 +39,11 @@ class Vector:
         for tensor in self:
             tensor.grad = None
 
+    def zero_nans(self):
+        """Set any nans or infs to zero, in-place."""
+        for tensor in self:
+            tensor.nan_to_num_(0,0,0)
+
     def __str__(self):
         """Lets us print the Vector."""
         return str([t for t in self])

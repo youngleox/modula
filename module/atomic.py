@@ -152,7 +152,7 @@ class Embedding(Module):
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        weight *= target_norm / weight.norm(dim=1, keepdim=True)
+        weight *= (target_norm / weight.norm(dim=1, keepdim=True)).nan_to_num_()
 
     @torch.no_grad()
     def regularize(self, w, strength):

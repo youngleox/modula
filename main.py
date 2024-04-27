@@ -145,6 +145,8 @@ if __name__ == '__main__':
                 mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
                 update = mom1 * 1.0
 
+            update.zero_nans()
+
             schedule = 1 - step / args.train_steps
 
             if args.normalize:
