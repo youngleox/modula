@@ -1,7 +1,7 @@
 if test "$3" = "adam" && test "$4" != normalize; then
     LRS=(0.00012207031 0.00024414062 0.00048828125 0.0009765625 0.001953125 0.00390625 0.0078125 0.015625 0.03125 0.0625 0.125)
 else
-    LRS=(0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0)
+    LRS=(0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0 8.0 16.0 32.0)
 fi
 
 if test "$3" = "adam"; then
@@ -10,7 +10,7 @@ else
     BETA2=-1
 fi
 
-WIDTHS=(32 64 128 256 512 1024 2048)
+WIDTHS=(32 64 128 256 512 1024)
 DEPTH=3
 
 for WIDTH in ${WIDTHS[@]}; do
@@ -26,11 +26,11 @@ for LR in ${LRS[@]}; do
      export DEPTH=$DEPTH
      export BLOCK_DEPTH=2
      export WIDTH=$WIDTH
-     export CONTEXT=256
-     export NUM_HEADS=6
+     export CONTEXT=128
+     export NUM_HEADS=8
      export D_EMBED=$WIDTH
-     export D_QUERY=$WIDTH
-     export D_VALUE=$WIDTH
+     export D_QUERY=$((WIDTH/NUM_HEADS))
+     export D_VALUE=$((WIDTH/NUM_HEADS))
      export LOSS=xent
      export LR=$LR
      export BETA1=0.9
@@ -44,7 +44,7 @@ for LR in ${LRS[@]}; do
 done
 done
 
-DEPTHS=(2 4 8 16 32 64 128 256 512)
+DEPTHS=(2 4 8 16 32 64)
 WIDTH=128
 
 for DEPTH in ${DEPTHS[@]}; do
@@ -60,11 +60,11 @@ for LR in ${LRS[@]}; do
      export DEPTH=$DEPTH
      export BLOCK_DEPTH=2
      export WIDTH=$WIDTH
-     export CONTEXT=256
-     export NUM_HEADS=6
+     export CONTEXT=128
+     export NUM_HEADS=8
      export D_EMBED=$WIDTH
-     export D_QUERY=$WIDTH
-     export D_VALUE=$WIDTH
+     export D_QUERY=$((WIDTH/NUM_HEADS))
+     export D_VALUE=$((WIDTH/NUM_HEADS))
      export LOSS=xent
      export LR=$LR
      export BETA1=0.9
