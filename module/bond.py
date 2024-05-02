@@ -61,6 +61,17 @@ def ScaledReLU():
     return math.sqrt(2) * ReLU()
 
 
+class GELU(Bond):
+    def __init__(self):
+        super().__init__()
+        self.sensitivity = 1 / math.sqrt(2)
+        self.forward = lambda x, w: torch.nn.functional.gelu(x)
+
+
+def ScaledGELU():
+    return math.sqrt(2) * GELU()
+
+
 class MeanSubtract(Bond):
     def __init__(self, dim=-1):
         super().__init__()
