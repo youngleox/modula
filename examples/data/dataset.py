@@ -1,4 +1,5 @@
 import os
+import subprocess
 import pickle
 import requests
 import numpy as np
@@ -40,7 +41,7 @@ def getDataset(dataset):
     elif dataset == "shakespeare":
 
         if not os.path.exists('data/shakespeare/train.bin'):
-            exec(open('data/shakespeare.py').read())
+            subprocess.call(['python', 'data/shakespeare.py'])
 
         trainset = np.memmap('data/shakespeare/train.bin', dtype=np.uint16, mode='r')
         testset  = np.memmap('data/shakespeare/val.bin',   dtype=np.uint16, mode='r')
@@ -48,6 +49,22 @@ def getDataset(dataset):
         vocab_size = 65
 
         return trainset, testset, vocab_size, None
+    
+    elif dataset == 'openwebtext':
+        
+        if not os.path.exists('data/openwebtext/train.bin'):
+            subprocess.call(['python', 'data/openwebtext.py'])
+
+        trainset = np.memmap('data/openwebtext/train.bin', dtype=np.uint16, mode='r')
+        testset  = np.memmap('data/openwebtext/val.bin',   dtype=np.uint16, mode='r')
+
+        vocab_size = 50257
+
+        return trainset, testset, vocab_size, None
+
+    else:
+        
+        raise ValueError(f"Unknown dataset: {dataset}")
 
 
 def getIterator(dataset, device, batch_size, context=None):

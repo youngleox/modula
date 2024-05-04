@@ -12,7 +12,7 @@ from data.dataset import getIterator
 from modula.module.compound import *
 
 architectures = ['resmlp', 'rescnn', 'gpt']
-datasets      = ['cifar10', 'shakespeare']
+datasets      = ['cifar10', 'shakespeare', 'openwebtext']
 losses        = ['mse', 'xent']
 
 parser = argparse.ArgumentParser()
