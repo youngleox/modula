@@ -84,7 +84,7 @@ def getIterator(dataset, device, batch_size, context=None):
 
         _getBatch = lambda train: next(train_iterator if train else test_iterator)
 
-    elif dataset == 'shakespeare':
+    elif dataset in ['shakespeare', 'openwebtext']:
 
         def _getBatch(train):
             data = trainset if train else testset
