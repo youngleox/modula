@@ -19,9 +19,10 @@ class Linear(Module):
     def forward(self, x, w):
         return self.scale * torch.nn.functional.linear(x, w[0])
 
-    def initialize(self, device):
+    def initialize(self, device, dtype=torch.float32):
         weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(weight)
+        weight.data = weight.data.to(dtype=dtype)
         return Vector(weight)
 
     @torch.no_grad()
@@ -59,10 +60,11 @@ class MultiHeadedLinear(Module):
     def forward(self, x, w):
         return self.scale * torch.einsum('ijh, ...jh -> ...ih', w[0], x)
 
-    def initialize(self, device):
+    def initialize(self, device, dtype=torch.float32):
         weight = torch.empty((self.out_features, self.in_features, self.num_heads), device=device, requires_grad=True)
         for head in range(self.num_heads):
             torch.nn.init.orthogonal_(weight[:,:,head])
+        weight.data = weight.data.to(dtype=dtype)
         return Vector(weight)
 
     @torch.no_grad()
@@ -101,11 +103,12 @@ class Conv2D(Module):
     def forward(self, x, w):
         return self.scale * torch.nn.functional.conv2d(x, w[0], None, self.stride, self.pad)
 
-    def initialize(self, device):
+    def initialize(self, device, dtype=torch.float32):
         weight = torch.empty((self.out_channels, self.in_channels, self.k, self.k), device=device, requires_grad=True)
         for kx in range(self.k):
             for ky in range(self.k):
                 torch.nn.init.orthogonal_(weight[:,:,kx,ky])
+        weight.data = weight.data.to(dtype=dtype)
         return Vector(weight)
 
     @torch.no_grad()
@@ -143,10 +146,11 @@ class Embedding(Module):
     def forward(self, x, w):
         return self.scale * torch.nn.functional.embedding(x, w[0])
 
-    def initialize(self, device):
+    def initialize(self, device, dtype=torch.float32):
         weight = torch.empty((self.num_embedding, self.embedding_dim), device=device, requires_grad=True)
         torch.nn.init.normal_(weight)
         weight.data /= weight.norm(dim=1, keepdim=True)
+        weight.data = weight.data.to(dtype=dtype)
         return Vector(weight)
 
     @torch.no_grad()

@@ -1,4 +1,5 @@
 import copy
+import torch 
 
 from modula.module.vector import Vector
 
@@ -12,7 +13,7 @@ class Module:
     def forward(self, x, w):
         raise NotImplementedError
 
-    def initialize(self, device):
+    def initialize(self, device, dtype):
         raise NotImplementedError
 
     def normalize(self, w, target_norm):
@@ -84,9 +85,9 @@ class CompositeModule(Module):
         w1 = w[m0.length:]
         return m1.forward(m0.forward(x, w0), w1)
 
-    def initialize(self, device):
+    def initialize(self, device, dtype=torch.float32):
         m0, m1 = self.children
-        return m0.initialize(device) & m1.initialize(device)
+        return m0.initialize(device, dtype=dtype) & m1.initialize(device, dtype=dtype)
 
     def normalize(self, w, target_norm=1):
         if self.mass > 0:
@@ -123,10 +124,10 @@ class TupleModule(Module):
             w = w[child.length:]
         return output
 
-    def initialize(self, device):
+    def initialize(self, device, dtype=torch.float32):
         vector = Vector()
         for child in self.children:
-            vector &= child.initialize(device)
+            vector &= child.initialize(device, dtype=dtype)
         return vector
 
     def normalize(self, w, target_norm=1):
@@ -152,7 +153,7 @@ class ScalarMultiply(Module):
         self.mass = 0
         self.sensitivity = abs(alpha)
         self.length = 0
-        self.initialize = lambda device : Vector()
+        self.initialize = lambda device, dtype : Vector()
         self.normalize  = lambda w, target_norm : None
         self.regularize = lambda w, strength : None
         self.alpha = alpha
@@ -170,7 +171,7 @@ class Add(Module):
         self.mass = 0
         self.sensitivity = 1
         self.length = 0
-        self.initialize = lambda device : Vector()
+        self.initialize = lambda device, dtype : Vector()
         self.normalize  = lambda w, target_norm : None
         self.regularize = lambda w, strength : None
         self.forward    = lambda x, w : sum(x)

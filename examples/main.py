@@ -11,6 +11,8 @@ from tqdm.auto import trange
 from data.dataset import getIterator
 from modula.module.compound import *
 
+from misc import check_bfloat16_support
+
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare', 'openwebtext']
 losses        = ['mse', 'xent']
@@ -35,6 +37,8 @@ parser.add_argument('--width',          type=int,   default=384  )
 parser.add_argument('--context',        type=int,   default=256  )
 parser.add_argument('--num_heads',      type=int,   default=8    )
 parser.add_argument('--d_embed',        type=int,   default=128  )
+parser.add_argument('--d_query',        type=int,   default=16   )
+parser.add_argument('--d_value',        type=int,   default=16   )
 
 # training
 parser.add_argument('--normalize',      action='store_true'      )
@@ -105,7 +109,9 @@ if __name__ == '__main__':
 
     print(net)
 
-    weights = net.initialize(device = "cpu" if args.cpu else "cuda")
+    dtype = torch.bfloat16 if check_bfloat16_support() else torch.float32
+    weights = net.initialize(device = "cpu" if args.cpu else "cuda", dtype=dtype)
+            
     with torch.no_grad():
         mom1 = 0 * weights
         if args.beta2 >= 0:
@@ -128,8 +134,8 @@ if __name__ == '__main__':
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
         data, target = getBatch(train = True)
+        
         train_loss, train_acc = evalute(net.forward(data, weights), data, target)
-
         train_loss.backward()
 
         with torch.no_grad():
