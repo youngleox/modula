@@ -35,8 +35,6 @@ parser.add_argument('--width',          type=int,   default=384  )
 parser.add_argument('--context',        type=int,   default=256  )
 parser.add_argument('--num_heads',      type=int,   default=8    )
 parser.add_argument('--d_embed',        type=int,   default=128  )
-parser.add_argument('--d_query',        type=int,   default=16   )
-parser.add_argument('--d_value',        type=int,   default=16   )
 
 # training
 parser.add_argument('--normalize',      action='store_true'      )
@@ -101,8 +99,8 @@ if __name__ == '__main__':
                     context = args.context,
                     num_heads = args.num_heads,
                     d_embed = args.d_embed,
-                    d_query = args.d_query,
-                    d_value = args.d_value,
+                    d_query = args.d_embed // args.num_heads,
+                    d_value = args.d_embed // args.num_heads,
                     num_blocks = args.depth )
 
     print(net)
