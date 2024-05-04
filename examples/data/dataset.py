@@ -94,6 +94,10 @@ def getIterator(dataset, device, batch_size, context=None):
             if device != "cpu":
                 x, y = x.pin_memory(), y.pin_memory()
             return x, y
+    
+    else:
+        
+        raise ValueError(f"Unknown dataset: {dataset}")
 
     def getBatch(train):
         data, target = _getBatch(train)
