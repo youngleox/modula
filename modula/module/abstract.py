@@ -1,6 +1,6 @@
 import copy
 
-from module.vector import Vector
+from modula.module.vector import Vector
 
 class Module:
     def __init__(self):

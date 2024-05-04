@@ -1,8 +1,8 @@
 import math
 import torch
 
-from module.abstract import Module
-from module.vector import Vector
+from modula.module.abstract import Module
+from modula.module.vector import Vector
 
 
 class Linear(Module):
