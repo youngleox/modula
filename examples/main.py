@@ -9,7 +9,7 @@ import pickle
 
 from tqdm.auto import trange
 from data.dataset import getIterator
-from modula.module.compound import *
+from modula.compound import *
 
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare', 'openwebtext']

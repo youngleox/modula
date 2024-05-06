@@ -1,8 +1,8 @@
 import math
 import torch
 
-from modula.module.abstract import Module
-from modula.module.vector import Vector
+from modula.abstract import Module
+from modula.vector import Vector
 
 
 class Bond(Module):

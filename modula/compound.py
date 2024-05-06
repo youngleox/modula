@@ -1,6 +1,6 @@
 import math
-from modula.module.atomic import *
-from modula.module.bond   import *
+from modula.atomic import *
+from modula.bond   import *
 
 
 def residualize(residue, num_blocks, block_depth):
