@@ -6,29 +6,38 @@
 
 Modula is a deep learning framework designed for graceful scaling. The user defines a network architecture in Modula by arbitrarily combining and composing atomic modules. Modula automatically constructs the modular gradient descent optimizer tailored to this network architecture. Modular gradient descent has the property that its optimal learning rate remains roughly fixed as the number and size of atomic modules is scaled. Essentially, Modula automates the computation of architecture-optimizer scaling rules for any computation graph. Modula is built on top of [PyTorch](https://pytorch.org/).
 
+## Installation
+
+local pip install:
+
+```bash
+pip install -e .
+```
+
 ## Example
 
 ```python
-from torch import randn
-from modula.atomic import Identity, Linear, ReLU, MeanSubtract, RMSNorm
+from torch import randn, no_grad
+from modula.atom import Linear
+from modula.bond import ReLU
 
-# sample some fake training data
-data = randn(32,1000)
-target = randn(32,10)
+data, target = randn(1000), randn(10)
 
-# set the network size
-num_blocks = 10
-block_depth = 3
-width = 100
+mlp = Linear(10,10000) @ ReLU() @ Linear(10000, 1000)
+weights = mlp.initialize(device="cpu")
 
-# define the network architecture
-residue = (MeanSubtract() @ ReLU() @ Linear(width, width) @ RMSNorm()) ** block_depth
-blocks = (Identity() + 1/num_blocks * residue) ** num_blocks
-net = Linear(10, width) @ blocks @ Linear(width, 1000)
+for _ in range(steps:=20):
+    output = mlp(data, weights)
 
-# run the training
-for _ in range(steps := 1000):
-    loss = (y - net(x)).square().mean()
+    loss = (target - output).square().mean()
     loss.backward()
-    net.update(lr = 0.5, hps = {'beta':0.9, 'wd':0.01})
+
+    with no_grad():
+        mlp.normalize(grad := weights.grad())
+        weights -= 0.1 * grad
+        weights.zero_grad()
+    
+        mlp.regularize(weights, strength = 0.01)
+
+    print(_, loss.item())
 ```
