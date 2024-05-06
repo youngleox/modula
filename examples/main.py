@@ -9,10 +9,10 @@ import pickle
 
 from tqdm.auto import trange
 from data.dataset import getIterator
-from module.compound import *
+from modula.compound import *
 
 architectures = ['resmlp', 'rescnn', 'gpt']
-datasets      = ['cifar10', 'shakespeare']
+datasets      = ['cifar10', 'shakespeare', 'openwebtext']
 losses        = ['mse', 'xent']
 
 parser = argparse.ArgumentParser()
