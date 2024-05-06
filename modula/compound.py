@@ -3,27 +3,12 @@ from modula.atom import *
 from modula.bond import *
 
 
-def residualize(residue, num_blocks, block_depth):
-    assert num_blocks > 1, "need at least two blocks"
-
-    block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue ** block_depth
-
-    return block ** num_blocks
-
-def residualize_tansformer(attention, mlp, num_blocks):
-    assert num_blocks > 1, "need at least two blocks"
-    block_scalar = 1/(2*num_blocks)
-    res_attention = (1-block_scalar) * Identity() + block_scalar * attention 
-
-    res_mlp = (1-block_scalar) * Identity() + block_scalar * mlp
-
-    return (res_mlp @ res_attention )** num_blocks
-
 def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
     initial = Linear(width, math.prod(input_dim)) @ Flatten()
 
     residue = MeanSubtract() @ Abs() @ Linear(width, width) @ RMSDivide()
-    blocks = residualize(residue, num_blocks, block_depth)
+    block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue ** block_depth
+    blocks = block ** num_blocks
     blocks.tare()
 
     final = Linear(output_dim, width)
@@ -35,7 +20,8 @@ def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
     initial = Conv2D(width, input_dim[0])
 
     residue = MeanSubtract(dim=(1,2,3)) @ Abs() @ Conv2D(width, width) @ RMSDivide(dim=(1,2,3))
-    blocks = residualize(residue, num_blocks, block_depth)
+    block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue ** block_depth
+    blocks = block ** num_blocks
     blocks.tare()
 
     final = Linear(output_dim, width) @ Flatten() @ AvgPool()
@@ -57,10 +43,12 @@ def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
     position_embedding = Embedding(context, d_embed) @ Enumerate()
     initial = 1/2 * token_embedding + 1/2 * position_embedding
     initial.tare()
-    mlp = ScaledGELU() @ Linear(d_embed, 4*d_embed) @ Linear(4*d_embed, d_embed) @ LayerNorm()
+
     attention = Attention(num_heads, d_embed, d_query, d_value, context, causal=True) @ LayerNorm()
-    
-    blocks = residualize_tansformer(attention, mlp, num_blocks)
+    mlp = ScaledGELU() @ Linear(d_embed, 4*d_embed) @ Linear(4*d_embed, d_embed) @ LayerNorm()
+    attention_block = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * attention
+    mlp_block       = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * mlp
+    blocks = (mlp_block @ attention_block) ** num_blocks
     blocks.tare()
 
     final = Linear(vocab_size, d_embed) @ LayerNorm()
