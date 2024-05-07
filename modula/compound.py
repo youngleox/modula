@@ -45,7 +45,7 @@ def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
     initial.tare()
 
     attention = Attention(num_heads, d_embed, d_query, d_value, context, causal=True) @ LayerNorm()
-    mlp = ScaledGELU() @ Linear(d_embed, 4*d_embed) @ Linear(4*d_embed, d_embed) @ LayerNorm()
+    mlp = Linear(d_embed, 4*d_embed) @ ScaledGELU() @ Linear(4*d_embed, d_embed) @ LayerNorm()
     attention_block = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * attention
     mlp_block       = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * mlp
     blocks = (mlp_block @ attention_block) ** num_blocks
