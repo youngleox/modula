@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 #SBATCH --output=/dev/null
@@ -27,9 +28,6 @@ python examples/main.py \
   --width $WIDTH \
   --context $CONTEXT \
   --num_heads $NUM_HEADS \
-  --d_embed $D_EMBED \
-  --d_query $D_QUERY \
-  --d_value $D_VALUE \
   --normalize \
   --loss $LOSS \
   --lr $LR \
