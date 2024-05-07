@@ -2,11 +2,10 @@ Metadata-Version: 2.1
 Name: modula
 Version: 0.0.1
 Summary: modula pytorch
-Home-page: git@github.com:jxbz/modula.git
-Author: Jeremy Bernstein
-Author-email: jb866@mit.edu
+Home-page: git@github.com:anon/modula.git
+Author: anon
+Author-email: anon@anon.com
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.10
-Requires-Dist: torch>=2.0.0
+Requires-Python: >=3.9
