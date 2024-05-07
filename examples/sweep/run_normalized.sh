@@ -13,7 +13,7 @@ module load cuda/11.8
 
 export OMP_NUM_THREADS=20
 
-python main.py \
+python examples/main.py \
   --log_dir logs/$TAG \
   --log_interval $LOG_INTERVAL \
   --seed $SEED \
