@@ -16,6 +16,7 @@ from misc import check_bfloat16_support
 architectures = ['resmlp', 'rescnn', 'gpt']
 datasets      = ['cifar10', 'shakespeare', 'openwebtext']
 losses        = ['mse', 'xent']
+dtype         = ['bfloat16', 'float32', 'auto']
 
 parser = argparse.ArgumentParser()
 
@@ -28,6 +29,7 @@ parser.add_argument('--batch_size',     type=int,   default=128  )
 parser.add_argument('--train_steps',    type=int,   default=1000 )
 parser.add_argument('--test_steps',     type=int,   default=100  )
 parser.add_argument('--dataset',        type=str,   default='cifar10',  choices=datasets)
+parser.add_argument('--dtype',          type=str,   default='float32',  choices=dtype)
 
 # architecture
 parser.add_argument('--arch',           type=str,   default='resmlp',   choices=architectures)
@@ -109,7 +111,10 @@ if __name__ == '__main__':
 
     print(net)
 
-    dtype = torch.bfloat16 if check_bfloat16_support() else torch.float32
+    if args.dtype == 'auto':    
+        dtype = torch.bfloat16 if check_bfloat16_support() else torch.float32
+    else:
+        dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
     weights = net.initialize(device = "cpu" if args.cpu else "cuda", dtype=dtype)
             
     with torch.no_grad():
