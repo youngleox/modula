@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 #SBATCH --output=/dev/null
