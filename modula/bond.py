@@ -10,7 +10,7 @@ class Bond(Module):
         super().__init__()
         self.mass = 0
         self.length = 0
-        self.initialize = lambda device : Vector()
+        self.initialize = lambda device, dtype : Vector()
         self.normalize  = lambda w, target_norm : None
         self.regularize = lambda w, strength : None
 
