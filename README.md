@@ -25,7 +25,7 @@ pip install -e .
 ├── logo
     └── ...
 ├── modula
-│   ├── abstract.py                 # basic module definitions: composition & concatenation, addition, etc.
+│   ├── abstract.py                 # basic definitions: composition & concatenation, etc.
 │   ├── atom.py                     # modules with weights: linear, conv2d etc.
 │   ├── bond.py                     # modules without weights: ReLU, FunctionalAttention, etc.
 │   ├── compound.py                 # derived modules: GPT, ResNet, etc.
