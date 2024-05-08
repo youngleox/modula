@@ -14,6 +14,28 @@ local pip install:
 pip install -e .
 ```
 
+## Repository structure
+
+```
+.
+├── examples
+│   ├── hello-world.py              # simple training loop
+│   ├── gradient-accumulation.py    # gradient accumulation for large batch training
+│   └── multi-gpu.py                # multi GPU training with torch.distributed
+├── logo
+    └── ...
+├── modula
+│   ├── abstract.py                 # basic module definitions: composition & concatenation, addition, etc.
+│   ├── atom.py                     # modules with weights: linear, conv2d etc.
+│   ├── bond.py                     # modules without weights: ReLU, FunctionalAttention, etc.
+│   ├── compound.py                 # derived modules: GPT, ResNet, etc.
+│   └── vector.py                   # class for storing weight vectors
+├── paper
+    └── ...
+├── README.md                       # this file
+└── setup.py                        # pip package stuff
+```
+
 ## Example
 
 ```python
