@@ -1,4 +1,4 @@
-from torch import randn, no_grad, bfloat16
+from torch import randn, no_grad
 from modula.atom import Linear
 from modula.bond import ReLU
 
