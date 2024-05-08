@@ -92,10 +92,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, cleanup)
 
     if args.arch == "resmlp":
-        net = ResMLP(args.width, args.depth, args.block_depth, input_dim, output_dim)
+        net = ResMLP(args.width, args.depth, args.block_depth, math.prod(input_dim), output_dim)
 
     elif args.arch == "rescnn":
-        net = ResCNN(args.width, args.depth, args.block_depth, input_dim, output_dim)
+        net = ResCNN(args.width, args.depth, args.block_depth, input_dim[0], output_dim)
 
     elif args.arch == "gpt":
         net = GPT(  vocab_size = input_dim,

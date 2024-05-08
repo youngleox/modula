@@ -1,10 +1,9 @@
-import math
 from modula.atom import *
 from modula.bond import *
 
 
 def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
-    initial = Linear(width, math.prod(input_dim)) @ Flatten()
+    initial = Linear(width, input_dim) @ Flatten()
 
     residue = MeanSubtract() @ Abs() @ Linear(width, width) @ RMSDivide()
     block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue ** block_depth
@@ -17,7 +16,7 @@ def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
 
 
 def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
-    initial = Conv2D(width, input_dim[0])
+    initial = Conv2D(width, input_dim)
 
     residue = MeanSubtract(dim=(1,2,3)) @ Abs() @ Conv2D(width, width) @ RMSDivide(dim=(1,2,3))
     block = (1-1/num_blocks) * Identity() + 1/num_blocks * residue ** block_depth
