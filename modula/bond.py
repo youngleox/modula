@@ -6,6 +6,7 @@ from modula.vector import Vector
 
 
 class Bond(Module):
+    """A module with no weights."""
     def __init__(self):
         super().__init__()
         self.mass = 0
@@ -16,6 +17,7 @@ class Bond(Module):
 
 
 class Identity(Bond):
+    """Identity module."""
     def __init__(self):
         super().__init__()
         self.sensitivity = 1
@@ -23,6 +25,7 @@ class Identity(Bond):
 
 
 class Flatten(Bond):
+    """Flatten all non-batch dimensions."""
     def __init__(self):
         super().__init__()
         self.sensitivity = 1
@@ -30,6 +33,7 @@ class Flatten(Bond):
 
 
 class Duplicate(Bond):
+    """Duplicate an input to pass through a multi-head module."""
     def __init__(self, num_copies):
         super().__init__()
         self.sensitivity = 1
@@ -37,6 +41,7 @@ class Duplicate(Bond):
 
 
 class Enumerate(Bond):
+    """Replace each column with its column index. Used to make position embeddings."""
     def __init__(self):
         super().__init__()
         self.sensitivity = 1
@@ -44,6 +49,7 @@ class Enumerate(Bond):
 
 
 class Abs(Bond):
+    """Absolute value nonlinearity."""
     def __init__(self):
         super().__init__()
         self.sensitivity = 1
@@ -51,6 +57,7 @@ class Abs(Bond):
 
 
 class ReLU(Bond):
+    """ReLU nonlinearity."""
     def __init__(self):
         super().__init__()
         self.sensitivity = 1 / math.sqrt(2)
@@ -58,10 +65,12 @@ class ReLU(Bond):
 
 
 def ScaledReLU():
+    """ReLU scaled to have sensitivity one."""
     return math.sqrt(2) * ReLU()
 
 
 class GELU(Bond):
+    """GELU nonlinearity."""
     def __init__(self):
         super().__init__()
         self.sensitivity = 1 / math.sqrt(2)
@@ -69,10 +78,12 @@ class GELU(Bond):
 
 
 def ScaledGELU():
+    """GELU scaled to have sensitivity 1."""
     return math.sqrt(2) * GELU()
 
 
 class MeanSubtract(Bond):
+    """Mean subtraction."""
     def __init__(self, dim=-1):
         super().__init__()
         self.sensitivity = 1
@@ -80,6 +91,7 @@ class MeanSubtract(Bond):
 
 
 class RMSDivide(Bond):
+    """Normalize to have unit RMS norm."""
     def __init__(self, dim=-1):
         super().__init__()
         self.sensitivity = 1
@@ -87,10 +99,12 @@ class RMSDivide(Bond):
 
 
 def LayerNorm(dim=-1):
+    """Mean subtraction followed by RMS normalization."""
     return RMSDivide(dim) @ MeanSubtract(dim)
 
 
 class Mean(Bond):
+    """Take the mean over a specified dimension."""
     def __init__(self, dim):
         super().__init__()
         self.sensitivity = 1
@@ -98,6 +112,7 @@ class Mean(Bond):
 
 
 class AvgPool(Bond):
+    """Average pooling that adapts to different input sizes."""
     def __init__(self, output_size = (1,1)):
         super().__init__()
         self.sensitivity = 1
@@ -105,6 +120,7 @@ class AvgPool(Bond):
 
 
 class FunctionalAttention(Bond):
+    """The part of attention that doesn't involve weights."""
 
     def __init__(self, causal):
         super().__init__()

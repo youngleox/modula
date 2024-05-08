@@ -3,6 +3,7 @@ from modula.bond import *
 
 
 def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
+    """ResNet where the blocks are MLPs."""
     initial = Linear(width, input_dim) @ Flatten()
 
     residue = MeanSubtract() @ Abs() @ Linear(width, width) @ RMSDivide()
@@ -16,6 +17,7 @@ def ResMLP(width, num_blocks, block_depth, input_dim, output_dim):
 
 
 def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
+    """ResNet where the blocks are CNNs."""
     initial = Conv2D(width, input_dim)
 
     residue = MeanSubtract(dim=(1,2,3)) @ Abs() @ Conv2D(width, width) @ RMSDivide(dim=(1,2,3))
@@ -29,6 +31,7 @@ def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
 
 
 def Attention(num_heads, d_embed, d_query, d_value, context, causal):
+    """Multi-head attention."""
     Q = MultiHeadedLinear(d_query, d_embed, num_heads)
     K = MultiHeadedLinear(d_query, d_embed, num_heads)
     V = MultiHeadedLinear(d_value, d_embed, num_heads)
