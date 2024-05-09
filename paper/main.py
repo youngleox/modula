@@ -82,6 +82,8 @@ if __name__ == '__main__':
     else:
         rank = 0
 
+    set_seed(args.seed)
+
     if rank == 0:
         os.makedirs(args.log_dir, exist_ok=True)
         pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
@@ -123,7 +125,6 @@ if __name__ == '__main__':
     else:
         dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
 
-    set_seed(args.seed)
     weights = net.initialize(device = "cpu" if args.cpu else rank, dtype=dtype)
 
     with torch.no_grad():
