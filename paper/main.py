@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser()
 
 # system
 parser.add_argument('--cpu',            action='store_true'      )
+parser.add_argument('--distribute',     action='store_true'      )
 parser.add_argument('--log_dir',        type=str,   default='logs/temp')
 parser.add_argument('--log_interval',   type=int,   default=100  )
 parser.add_argument('--seed',           type=int,   default=0    )
@@ -47,6 +48,10 @@ parser.add_argument('--beta1',          type=float, default=0.9  )
 parser.add_argument('--beta2',          type=float, default=0.99 )
 parser.add_argument('--wd',             type=float, default=0.01 )
 
+def set_seed(seed):
+    torch.manual_seed(seed)
+    numpy.random.seed(seed)
+
 def evalute(output, data, target):
 
     if args.arch == "gpt":
@@ -70,13 +75,18 @@ def evalute(output, data, target):
 if __name__ == '__main__':
 
     args = parser.parse_args()
-    os.makedirs(args.log_dir, exist_ok=True)
-    pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
-    for arg in vars(args):
-        print("{: <20} {: <20}".format(arg, getattr(args, arg)))
 
-    torch.manual_seed(args.seed)
-    numpy.random.seed(args.seed)
+    if args.distribute:
+        torch.distributed.init_process_group(backend='nccl')
+        rank = torch.distributed.get_rank()
+    else:
+        rank = 0
+
+    if rank == 0:
+        os.makedirs(args.log_dir, exist_ok=True)
+        pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
+        for arg in vars(args):
+            print("{: <20} {: <20}".format(arg, getattr(args, arg)))
 
     getBatch, input_dim, output_dim = getIterator(  dataset = args.dataset,
                                                     batch_size = args.batch_size,
@@ -106,12 +116,14 @@ if __name__ == '__main__':
                     d_value = args.width // args.num_heads,
                     num_blocks = args.depth )
 
-    print(net)
+    if rank == 0: print(net)
 
     if args.dtype == 'auto':    
         dtype = torch.bfloat16 if check_bfloat16_support() else torch.float32
     else:
         dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
+
+    set_seed(args.seed)
     weights = net.initialize(device = "cpu" if args.cpu else "cuda", dtype=dtype)
             
     with torch.no_grad():
@@ -135,13 +147,16 @@ if __name__ == '__main__':
             results["test_loss"].append(test_loss.item() / args.test_steps)
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
+        set_seed(args.seed + step + rank)
         data, target = getBatch(train = True)
+        set_seed(args.seed + step)
         
         train_loss, train_acc = evalute(net.forward(data, weights), data, target)
         train_loss.backward()
 
         with torch.no_grad():
             grad = weights.grad()
+            if args.distribute: grad.all_reduce()
 
             if args.beta2 >= 0:
                 mom1 += (1-args.beta1)**(step/(step+1)) * (grad    - mom1)
@@ -169,10 +184,10 @@ if __name__ == '__main__':
         results["train_loss"].append(train_loss.item())
         results["train_acc"].append(train_acc.item())
 
-        if step % args.log_interval == 0:
+        if rank == 0 and step % args.log_interval == 0:
             pickle.dump(results, open( os.path.join(args.log_dir, 'results.pickle'), "wb" ) )
             pbar.set_description(f"train: {numpy.mean(results['train_acc'][-100:]):.4f} // test: {results['test_acc'][-1]:.4f}")
 
-            if step > 0 and math.isnan(train_loss): break
+            if step > 0 and math.isnan(train_loss): cleanup()
 
     cleanup()
