@@ -118,14 +118,14 @@ if __name__ == '__main__':
 
     if rank == 0: print(net)
 
-    if args.dtype == 'auto':    
+    if args.dtype == 'auto':
         dtype = torch.bfloat16 if check_bfloat16_support() else torch.float32
     else:
         dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
 
     set_seed(args.seed)
     weights = net.initialize(device = "cpu" if args.cpu else rank, dtype=dtype)
-            
+
     with torch.no_grad():
         mom1 = 0 * weights
         if args.beta2 >= 0:
@@ -133,7 +133,8 @@ if __name__ == '__main__':
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
-    for step in (pbar := trange(args.train_steps + 1, file=sys.stdout)):
+    trange = trange if rank == 0 else range
+    for step in (pbar := trange(args.train_steps + 1)):
 
         if step % args.log_interval == 0:
             test_loss = test_acc = 0
@@ -150,7 +151,7 @@ if __name__ == '__main__':
         set_seed(args.seed + step + rank)
         data, target = getBatch(train = True)
         set_seed(args.seed + step)
-        
+
         train_loss, train_acc = evalute(net.forward(data, weights), data, target)
         train_loss.backward()
 
