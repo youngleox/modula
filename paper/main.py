@@ -91,7 +91,7 @@ if __name__ == '__main__':
     getBatch, input_dim, output_dim = getIterator(  dataset = args.dataset,
                                                     batch_size = args.batch_size,
                                                     context = args.context,
-                                                    device = "cpu" if args.cpu else "cuda" )
+                                                    device = "cpu" if args.cpu else rank )
 
     def cleanup(sig=None, frame=None):
         global getBatch
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
 
     set_seed(args.seed)
-    weights = net.initialize(device = "cpu" if args.cpu else "cuda", dtype=dtype)
+    weights = net.initialize(device = "cpu" if args.cpu else rank, dtype=dtype)
             
     with torch.no_grad():
         mom1 = 0 * weights
