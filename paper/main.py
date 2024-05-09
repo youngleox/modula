@@ -7,7 +7,7 @@ import numpy
 import argparse
 import pickle
 
-from tqdm.auto import trange
+from tqdm import trange
 from data.dataset import getIterator
 from modula.compound import *
 
@@ -135,8 +135,7 @@ if __name__ == '__main__':
 
     results = {"train_loss":[], "test_loss":[], "train_acc":[], "test_acc":[]}
 
-    trange = trange if rank == 0 else range
-    for step in (pbar := trange(args.train_steps + 1)):
+    for step in (pbar := trange(args.train_steps + 1, file=sys.stdout, disable=(rank != 0))):
 
         if step % args.log_interval == 0:
             test_loss = test_acc = 0
