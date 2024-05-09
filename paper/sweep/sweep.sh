@@ -38,7 +38,7 @@ for LR in ${LRS[@]}; do
      export WD=0.01
      export NORMALIZE=$4
 
-     sbatch --export=ALL sweep/run_normalized.sh
+     sbatch --export=ALL sweep/run.sh
 done
 done
 
@@ -70,6 +70,6 @@ for LR in ${LRS[@]}; do
      export WD=0.01
      export NORMALIZE=$4
 
-     sbatch --export=ALL sweep/run_normalized.sh
+     sbatch --export=ALL sweep/run.sh
 done
 done
