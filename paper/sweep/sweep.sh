@@ -35,7 +35,7 @@ for LR in ${LRS[@]}; do
      export LR=$LR
      export BETA1=0.9
      export BETA2=$BETA2
-     export WD=0.01
+     export WD=0.0
      export NORMALIZE=$4
 
      sbatch --export=ALL sweep/run.sh
@@ -67,7 +67,7 @@ for LR in ${LRS[@]}; do
      export LR=$LR
      export BETA1=0.9
      export BETA2=$BETA2
-     export WD=0.01
+     export WD=0.0
      export NORMALIZE=$4
 
      sbatch --export=ALL sweep/run.sh
