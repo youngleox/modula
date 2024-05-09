@@ -23,14 +23,15 @@ class Linear(Module):
         weight = torch.empty((self.out_features, self.in_features), device=device, requires_grad=True)
         torch.nn.init.orthogonal_(weight)
         weight.data = weight.data.to(dtype=dtype)
+
+        self.u = torch.randn_like(weight[0])
+        self.v = torch.empty_like(weight[:,0])
+
         return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        if not hasattr(self, "u"):
-            self.u = torch.randn_like(weight[0])
-            self.v = torch.empty_like(weight[:,0])
         torch.mv(weight, self.u, out=self.v)
         self.v /= self.v.norm()
         torch.mv(weight.t(), self.v, out=self.u)
@@ -65,13 +66,14 @@ class MultiHeadedLinear(Module):
         for head in range(self.num_heads):
             torch.nn.init.orthogonal_(weight[:,:,head])
         weight.data = weight.data.to(dtype=dtype)
+
+        self.u = torch.randn_like(weight[0])
+
         return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        if not hasattr(self, "u"):
-            self.u = torch.randn_like(weight[0])
         v = torch.einsum('ab..., b... -> a...', weight, self.u)
         v /= v.norm(dim=0, keepdim=True)
         self.u = torch.einsum('a..., ab... -> b...', v, weight)
@@ -109,13 +111,14 @@ class Conv2D(Module):
             for ky in range(self.k):
                 torch.nn.init.orthogonal_(weight[:,:,kx,ky])
         weight.data = weight.data.to(dtype=dtype)
+
+        self.u = torch.randn_like(weight[0])
+
         return Vector(weight)
 
     @torch.no_grad()
     def normalize(self, w, target_norm):
         weight = w[0]
-        if not hasattr(self, "u"):
-            self.u = torch.randn_like(weight[0])
         v = torch.einsum('ab..., b... -> a...', weight, self.u)
         v /= v.norm(dim=0, keepdim=True)
         self.u = torch.einsum('a..., ab... -> b...', v, weight)
