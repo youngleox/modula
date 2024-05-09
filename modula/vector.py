@@ -4,7 +4,7 @@ import torch
 class Vector:
     """For doing algebra on lists of tensors.
 
-    An instance of Vector stores a list of tensors. Vectors can be 
+    An instance of Vector stores a list of tensors. Vectors can be
     added, subtracted, scalar-multiplied, elementwise-multiplied, etc.
     We also support in-place operations for efficiency.
 
@@ -43,6 +43,18 @@ class Vector:
         """Set any nans or infs to zero, in-place."""
         for tensor in self:
             tensor.nan_to_num_(0,0,0)
+
+    @torch.no_grad()
+    def all_reduce(self):
+        """Sums this vector over all workers"""
+        for tensor in self:
+            torch.distributed.all_reduce(tensor, torch.distributed.ReduceOp.SUM)
+
+    @torch.no_grad()
+    def broadcast(self):
+        """Broadcasts this vector from worker zero to all other workers."""
+        for tensor in self:
+            torch.distributed.broadcast(tensor, src=0)
 
     def __str__(self):
         """Lets us print the Vector."""
@@ -128,7 +140,7 @@ class Vector:
 
 
 if __name__ == "__main__":
-    
+
     a = Vector([torch.tensor(2.0), torch.tensor(1.0)])
 
     a *= 2;  print(a)
@@ -140,7 +152,7 @@ if __name__ == "__main__":
     a = Vector([torch.tensor(2.0), torch.tensor(1.0)])
 
     a **= a; print(a)
-    a *= a;  print(a)   
+    a *= a;  print(a)
     a /= a;  print(a)
     a += a;  print(a)
     a -= a;  print(a)
