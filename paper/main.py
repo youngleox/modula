@@ -82,18 +82,20 @@ if __name__ == '__main__':
     else:
         rank = 0
 
-    set_seed(args.seed)
-
     if rank == 0:
         os.makedirs(args.log_dir, exist_ok=True)
         pickle.dump(vars(args), open( os.path.join(args.log_dir, 'args.pickle'), "wb" ) )
         for arg in vars(args):
             print("{: <20} {: <20}".format(arg, getattr(args, arg)))
 
+    set_seed(args.seed + rank)
+
     getBatch, input_dim, output_dim = getIterator(  dataset = args.dataset,
                                                     batch_size = args.batch_size,
                                                     context = args.context,
                                                     device = "cpu" if args.cpu else rank )
+
+    set_seed(args.seed)
 
     def cleanup(sig=None, frame=None):
         global getBatch
@@ -149,9 +151,7 @@ if __name__ == '__main__':
             results["test_loss"].append(test_loss.item() / args.test_steps)
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
-        set_seed(args.seed + step + rank)
         data, target = getBatch(train = True)
-        set_seed(args.seed + step)
 
         train_loss, train_acc = evalute(net.forward(data, weights), data, target)
         train_loss.backward()
