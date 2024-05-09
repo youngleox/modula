@@ -32,12 +32,33 @@ class Flatten(Bond):
         self.forward = lambda x, w: x.flatten(start_dim=1)
 
 
-class Duplicate(Bond):
-    """Duplicate an input to pass through a multi-head module."""
-    def __init__(self, num_copies):
+class AddHeads(Bond):
+    """Reshapes an input to have heads.
+
+    Input shape: batch_size, sequence_length, embed_dim
+    Output shape: batch_size, num_heads, sequence_length, head_size
+
+    Adapted from Karpathy's nanoGPT.
+    """
+    def __init__(self, num_heads):
         super().__init__()
         self.sensitivity = 1
-        self.forward = lambda x, w: x.unsqueeze(dim=-1).expand(list(x.shape)+[num_copies])
+        self.num_heads = num_heads
+
+    def forward(self, x, w):
+        B, T, C = x.size()
+        return x.view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)
+
+
+class RemoveHeads(Bond):
+    """Inverse of AddHeads."""
+    def __init__(self):
+        super().__init__()
+        self.sensitivity = 1
+
+    def forward(self, x, w):
+        B, nh, T, hs = x.size()
+        return x.transpose(1, 2).contiguous().view(B, T, nh*hs)
 
 
 class Enumerate(Bond):
@@ -130,10 +151,4 @@ class FunctionalAttention(Bond):
     def forward(self, x, w):
         q, k, v = x
 
-        att = torch.einsum('bcqh, bCqh -> bcCh', q, k) / q.size()[-2]
-        if self.causal:
-            att -= torch.ones_like(att[0,:,:,0]).mul_(float('inf')).triu_(diagonal=1).unsqueeze(0).unsqueeze(-1)
-        p = torch.nn.functional.softmax(att, dim=-2)
-        y = torch.einsum('bcCh, bCvh -> bcvh', p, v)
-
-        return y
+        return torch.nn.functional.scaled_dot_product_attention(q, k, v, is_causal=self.causal, scale=1/q.shape[-1])

@@ -32,15 +32,16 @@ def ResCNN(width, num_blocks, block_depth, input_dim, output_dim):
 
 def Attention(num_heads, d_embed, d_query, d_value, context, causal):
     """Multi-head attention."""
-    Q = MultiHeadedLinear(d_query, d_embed, num_heads)
-    K = MultiHeadedLinear(d_query, d_embed, num_heads)
-    V = MultiHeadedLinear(d_value, d_embed, num_heads)
-    W = MultiHeadedLinear(d_embed, d_value, num_heads)
+    Q = AddHeads(num_heads) @ Linear(num_heads * d_query, d_embed)
+    K = AddHeads(num_heads) @ Linear(num_heads * d_query, d_embed)
+    V = AddHeads(num_heads) @ Linear(num_heads * d_value, d_embed)
+    W = Linear(d_embed, d_value * num_heads) @ RemoveHeads()
 
-    return Mean(dim=-1) @ W @ FunctionalAttention(causal) * 1/3 @ (Q, K, V) @ Duplicate(num_heads)
+    return W @ FunctionalAttention(causal) * 1/3 @ (Q, K, V)
 
 
 def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
+    """GPT."""
     token_embedding = Embedding(vocab_size, d_embed)
     position_embedding = Embedding(context, d_embed) @ Enumerate()
     initial = 1/2 * token_embedding + 1/2 * position_embedding

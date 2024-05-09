@@ -46,48 +46,6 @@ class Linear(Module):
         print(f"Linear module of shape {(self.out_features, self.in_features)} and mass {self.mass}.")
 
 
-class MultiHeadedLinear(Module):
-    def __init__(self, out_features, in_features, num_heads, mass=1):
-        super().__init__()
-        self.mass = mass
-        self.sensitivity = 1
-        self.length = 1
-
-        self.num_heads = num_heads
-        self.out_features = out_features
-        self.in_features = in_features
-        self.scale = math.sqrt(out_features / in_features)
-
-    def forward(self, x, w):
-        return self.scale * torch.einsum('ijh, ...jh -> ...ih', w[0], x)
-
-    def initialize(self, device, dtype=torch.float32):
-        weight = torch.empty((self.out_features, self.in_features, self.num_heads), device=device, requires_grad=True)
-        for head in range(self.num_heads):
-            torch.nn.init.orthogonal_(weight[:,:,head])
-        weight.data = weight.data.to(dtype=dtype)
-
-        self.u = torch.randn_like(weight[0])
-
-        return Vector(weight)
-
-    @torch.no_grad()
-    def normalize(self, w, target_norm):
-        weight = w[0]
-        v = torch.einsum('ab..., b... -> a...', weight, self.u)
-        v /= v.norm(dim=0, keepdim=True)
-        self.u = torch.einsum('a..., ab... -> b...', v, weight)
-        weight *= target_norm / self.u.norm(dim=0, keepdim=True)
-
-    @torch.no_grad()
-    def regularize(self, w, strength):
-        weight = w[0]
-        weight *= 1 - strength
-
-    def print_submodules(self):
-        print(f"Linear module of shape {(self.out_features, self.in_features)} with {self.num_heads} heads and mass {self.mass}.")
-
-
 class Conv2D(Module):
     def __init__(self, out_channels, in_channels, kernel_size=3, stride=1, padding=1, mass=1):
         super().__init__()
