@@ -28,9 +28,6 @@ for LR in ${LRS[@]}; do
      export WIDTH=$WIDTH
      export CONTEXT=128
      export NUM_HEADS=8
-     export D_EMBED=$WIDTH
-     export D_QUERY=$((WIDTH/NUM_HEADS))
-     export D_VALUE=$((WIDTH/NUM_HEADS))
      export LOSS=xent
      export LR=$LR
      export BETA1=0.9
@@ -60,9 +57,6 @@ for LR in ${LRS[@]}; do
      export WIDTH=$WIDTH
      export CONTEXT=128
      export NUM_HEADS=8
-     export D_EMBED=$WIDTH
-     export D_QUERY=$((WIDTH/NUM_HEADS))
-     export D_VALUE=$((WIDTH/NUM_HEADS))
      export LOSS=xent
      export LR=$LR
      export BETA1=0.9
