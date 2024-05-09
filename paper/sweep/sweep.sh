@@ -1,7 +1,7 @@
-if test "$3" = "adam" && test "$4" != normalize; then
+if test "$3" = "adam" && test "$4" != 1; then
     LRS=(0.00012207031 0.00024414062 0.00048828125 0.0009765625 0.001953125 0.00390625 0.0078125 0.015625 0.03125 0.0625 0.125)
 else
-    LRS=(0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 4.0 8.0 16.0 32.0)
+    LRS=(0.015625 0.03125 0.0625 0.125 0.25 0.5 1.0 2.0 3.0 4.0)
 fi
 
 if test "$3" = "adam"; then
@@ -36,11 +36,9 @@ for LR in ${LRS[@]}; do
      export BETA1=0.9
      export BETA2=$BETA2
      export WD=0.01
-     if test "$4" != normalize; then
-         sbatch --export=ALL sweep/run_unnormalized.sh
-     else
-         sbatch --export=ALL sweep/run_normalized.sh
-     fi
+     export NORMALIZE=$4
+
+     sbatch --export=ALL sweep/run_normalized.sh
 done
 done
 
@@ -70,10 +68,8 @@ for LR in ${LRS[@]}; do
      export BETA1=0.9
      export BETA2=$BETA2
      export WD=0.01
-     if test "$4" != normalize; then
-         sbatch --export=ALL sweep/run_unnormalized.sh
-     else
-         sbatch --export=ALL sweep/run_normalized.sh
-     fi
+     export NORMALIZE=$4
+
+     sbatch --export=ALL sweep/run_normalized.sh
 done
 done

@@ -41,7 +41,7 @@ parser.add_argument('--context',        type=int,   default=256  )
 parser.add_argument('--num_heads',      type=int,   default=8    )
 
 # training
-parser.add_argument('--normalize',      action='store_true'      )
+parser.add_argument('--normalize',      type=int,   default=1     ,     choices=[0,1])
 parser.add_argument('--loss',           type=str,   default='xent',     choices=losses)
 parser.add_argument('--lr',             type=float, default=0.5  )
 parser.add_argument('--beta1',          type=float, default=0.9  )

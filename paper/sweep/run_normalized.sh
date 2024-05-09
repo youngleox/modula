@@ -27,7 +27,7 @@ python examples/main.py \
   --width $WIDTH \
   --context $CONTEXT \
   --num_heads $NUM_HEADS \
-  --normalize \
+  --normalize $NORMALIZE \
   --loss $LOSS \
   --lr $LR \
   --beta1 $BETA1 \
