@@ -17,9 +17,12 @@ DEPTH=3
 for WIDTH in ${WIDTHS[@]}; do
      GPU=1
      for LR in ${LRS[@]}; do
-          export CUDA_VISIBLE_DEVICES=$GPU
           TAG=$1/$2/$3/$4/$WIDTH/$DEPTH/$LR
-          python main.py --arch $2 --dataset $1 --depth $DEPTH --width $WIDTH --lr $LR --train_steps 10000 --context 128 --wd 0.0 --normalize $4 --beta2 $BETA2 --log_dir logs/$TAG &
+          mkdir -p logs/$TAG
+          git archive -o logs/$TAG/code.zip HEAD
+          export CUDA_VISIBLE_DEVICES=$GPU
+          python main.py --arch $2 --dataset $1 --depth $DEPTH --width $WIDTH --lr $LR --train_steps 10000 --context 128 --wd 0.0 --normalize $4 --beta2 $BETA2 \
+              --log_dir logs/$TAG 1> logs/$TAG/out.log 2> logs/$TAG/err.log &
           ((GPU+=1))
      done
      wait
@@ -31,9 +34,12 @@ WIDTH=128
 for DEPTH in ${DEPTHS[@]}; do
      GPU=1
      for LR in ${LRS[@]}; do
-          export CUDA_VISIBLE_DEVICES=$GPU
           TAG=$1/$2/$3/$4/$WIDTH/$DEPTH/$LR
-          python main.py --arch $2 --dataset $1 --depth $DEPTH --width $WIDTH --lr $LR --train_steps 10000 --context 128 --wd 0.0 --normalize $4 --beta2 $BETA2 --log_dir logs/$TAG &
+          mkdir -p logs/$TAG
+          git archive -o logs/$TAG/code.zip HEAD
+          export CUDA_VISIBLE_DEVICES=$GPU
+          python main.py --arch $2 --dataset $1 --depth $DEPTH --width $WIDTH --lr $LR --train_steps 10000 --context 128 --wd 0.0 --normalize $4 --beta2 $BETA2 \
+              --log_dir logs/$TAG 1> logs/$TAG/out.log 2> logs/$TAG/err.log &
           ((GPU+=1))
      done
      wait
