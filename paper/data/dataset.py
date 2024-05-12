@@ -7,7 +7,30 @@ import torch
 
 from torchvision import datasets, transforms
 
-from data.sampler import RandomSampler
+
+class RandomSampler(torch.utils.data.Sampler):
+
+    def __init__(self, data, batch_size):
+        self.length = len(data)
+        self.batch_size = batch_size
+
+    def __iter__(self):
+        while True:
+            yield np.random.randint(self.length, size=self.batch_size)
+
+
+class SimpleLLMDataset(torch.utils.data.Dataset):
+
+    def __init__(self, data, context):
+        self.data = data
+        self.context = context
+
+    def __getitem__(self, index):
+        return torch.tensor(self.data[index  :index+self.context  ].astype(np.int64)), \
+               torch.tensor(self.data[index+1:index+self.context+1].astype(np.int64))
+
+    def __len__(self):
+        return len(self.data) - self.context - 1
 
 
 def getDataset(dataset, context=None):
@@ -69,16 +92,3 @@ def getIterator(dataset, batch_size, context=None):
     getBatch = lambda train: next(train_iterator if train else test_iterator)
 
     return getBatch, input_dim, output_dim
-
-
-class SimpleLLMDataset(torch.utils.data.Dataset):
-    def __init__(self, data, context):
-        self.data = data
-        self.context = context
-
-    def __getitem__(self, index):
-        return torch.tensor(self.data[index  :index+self.context  ].astype(np.int64)), \
-               torch.tensor(self.data[index+1:index+self.context+1].astype(np.int64))
-
-    def __len__(self):
-        return len(self.data) - self.context - 1
