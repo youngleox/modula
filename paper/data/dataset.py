@@ -10,7 +10,7 @@ from torchvision import datasets, transforms
 from data.sampler import RandomSampler
 
 
-def getDataset(dataset):
+def getDataset(dataset, context=None):
 
     if dataset == "cifar10":
 
@@ -35,84 +35,50 @@ def getDataset(dataset):
 
         input_dim = (3,32,32)
         output_dim = 10
-        
+
         return trainset, testset, input_dim, output_dim
 
-    elif dataset == "shakespeare":
+    elif dataset in ["shakespeare", "tinystories", "openwebtext"]:
 
-        if not os.path.exists('data/shakespeare/train.bin'):
-            subprocess.call(['python', 'data/shakespeare.py'])
+        if not os.path.exists(f"data/{dataset}/train.bin"):
+            subprocess.call(['python', f"data/{dataset}.py"])
 
-        trainset = np.memmap('data/shakespeare/train.bin', dtype=np.uint16, mode='r')
-        testset  = np.memmap('data/shakespeare/val.bin',   dtype=np.uint16, mode='r')
+        trainset = SimpleLLMDataset(np.memmap(f"data/{dataset}/train.bin", dtype=np.uint16, mode='r'), context)
+        testset  = SimpleLLMDataset(np.memmap(f"data/{dataset}/val.bin",   dtype=np.uint16, mode='r'), context)
 
-        vocab_size = 65
-
-        return trainset, testset, vocab_size, None
-    
-    elif dataset == 'openwebtext':
-        
-        if not os.path.exists('data/openwebtext/train.bin'):
-            subprocess.call(['python', 'data/openwebtext.py'])
-
-        trainset = np.memmap('data/openwebtext/train.bin', dtype=np.uint16, mode='r')
-        testset  = np.memmap('data/openwebtext/val.bin',   dtype=np.uint16, mode='r')
-
-        vocab_size = 50257
+        vocab_size = 65 if dataset == "shakespeare" else 50257
 
         return trainset, testset, vocab_size, None
 
-    elif dataset == 'tinystories':
-        
-        if not os.path.exists('data/tinystories/train.bin'):
-            subprocess.call(['python', 'data/tinystories.py'])
-
-        trainset = np.memmap('data/tinystories/train.bin', dtype=np.uint16, mode='r')
-        testset  = np.memmap('data/tinystories/val.bin',   dtype=np.uint16, mode='r')
-
-        vocab_size = 50257
-
-        return trainset, testset, vocab_size, None
-
-    else:
-        
-        raise ValueError(f"Unknown dataset: {dataset}")
+    else: raise ValueError(f"Unknown dataset: {dataset}")
 
 
-def getIterator(dataset, device, batch_size, context=None):
+def getIterator(dataset, batch_size, context=None):
 
-    trainset, testset, input_dim, output_dim = getDataset(dataset)
+    trainset, testset, input_dim, output_dim = getDataset(dataset, context)
 
-    if dataset == 'cifar10':
+    train_sampler = RandomSampler(trainset, batch_size)
+    test_sampler  = RandomSampler(testset,  batch_size)
 
-        train_sampler = RandomSampler(trainset, batch_size)
-        test_sampler = RandomSampler(testset, batch_size)
+    train_loader = torch.utils.data.DataLoader( trainset, num_workers=8, pin_memory=True, batch_sampler=train_sampler)
+    test_loader  = torch.utils.data.DataLoader( testset,  num_workers=8, pin_memory=True, batch_sampler=test_sampler)
 
-        train_loader = torch.utils.data.DataLoader( trainset, num_workers=8, pin_memory=True, batch_sampler=train_sampler)
-        test_loader = torch.utils.data.DataLoader(  testset,  num_workers=8, pin_memory=True, batch_sampler=test_sampler)
+    train_iterator = iter(train_loader)
+    test_iterator  = iter(test_loader)
 
-        train_iterator = iter(train_loader)
-        test_iterator  = iter(test_loader)
-
-        _getBatch = lambda train: next(train_iterator if train else test_iterator)
-
-    elif dataset in ['shakespeare', 'openwebtext', 'tinystories']:
-
-        def _getBatch(train):
-            data = trainset if train else testset
-            ix = torch.randint(len(data) - context, (batch_size,))
-            x = torch.stack([torch.from_numpy((data[i:i+context]).astype(np.int64)) for i in ix])
-            y = torch.stack([torch.from_numpy((data[i+1:i+1+context]).astype(np.int64)) for i in ix])
-            if device != "cpu":
-                x, y = x.pin_memory(), y.pin_memory()
-            return x, y
-    
-    else:
-        
-        raise ValueError(f"Unknown dataset: {dataset}")
-
-    def getBatch(train):
-        data, target = _getBatch(train)
-        return data.to(device, non_blocking=True), target.to(device, non_blocking=True)
+    getBatch = lambda train: next(train_iterator if train else test_iterator)
 
     return getBatch, input_dim, output_dim
+
+
+class SimpleLLMDataset(torch.utils.data.Dataset):
+    def __init__(self, data, context):
+        self.data = data
+        self.context = context
+
+    def __getitem__(self, index):
+        return torch.tensor(self.data[index  :index+self.context  ].astype(np.int64)), \
+               torch.tensor(self.data[index+1:index+self.context+1].astype(np.int64))
+
+    def __len__(self):
+        return len(self.data) - self.context - 1

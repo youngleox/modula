@@ -95,8 +95,7 @@ if __name__ == '__main__':
     set_seed(args.seed + rank)
     getBatch, input_dim, output_dim = getIterator(  dataset = args.dataset,
                                                     batch_size = args.batch_size,
-                                                    context = args.context,
-                                                    device = "cpu" if args.cpu else rank )
+                                                    context = args.context  )
 
     def cleanup(sig=None, frame=None):
         global getBatch
@@ -128,8 +127,10 @@ if __name__ == '__main__':
     else:
         dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
 
+    device = "cpu" if args.cpu else rank
+
     set_seed(args.seed)
-    weights = net.initialize(device = "cpu" if args.cpu else rank, dtype=dtype)
+    weights = net.initialize(device=device, dtype=dtype)
     set_seed(args.seed + rank)
 
     with torch.no_grad():
@@ -145,6 +146,7 @@ if __name__ == '__main__':
             test_loss = test_acc = 0
             for _ in range(args.test_steps):
                 data, target = getBatch(train = False)
+                data, target = data.to(device, non_blocking=True), target.to(device, non_blocking=True)
                 with torch.no_grad(): loss, acc = evalute(net.forward(data, weights), data, target)
 
                 test_loss += loss
@@ -154,6 +156,7 @@ if __name__ == '__main__':
             results["test_acc"].append(test_acc.item() / args.test_steps)
 
         data, target = getBatch(train = True)
+        data, target = data.to(device, non_blocking=True), target.to(device, non_blocking=True)
 
         train_loss, train_acc = evalute(net.forward(data, weights), data, target)
         train_loss.backward()
