@@ -49,7 +49,7 @@ parser.add_argument('--beta1',          type=float, default=0.9  )
 parser.add_argument('--beta2',          type=float, default=0.99 )
 parser.add_argument('--wd',             type=float, default=0.01 )
 parser.add_argument('--scheduler',      type=str,   default="linear", choices=scheduler)
-parser.add_argument('--min_lr_factor',  type=float, default=0.1  )
+parser.add_argument('--min_lr_factor',  type=float, default=0.0  )
 
 
 def set_seed(seed):
@@ -75,11 +75,6 @@ def evalute(output, data, target):
 
     return loss, acc
 
-def cosine_lr_decay(curr_step, max_step, min_lr_factor):
-    current_progress = curr_step / max_step
-    gain = min_lr_factor + (1 - min_lr_factor) * \
-        (1 + math.cos(math.pi * current_progress)) / 2
-    return gain
 
 if __name__ == '__main__':
 
