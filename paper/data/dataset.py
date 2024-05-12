@@ -83,8 +83,8 @@ def getIterator(dataset, batch_size, context=None):
     train_sampler = RandomSampler(trainset, batch_size)
     test_sampler  = RandomSampler(testset,  batch_size)
 
-    train_loader = torch.utils.data.DataLoader( trainset, num_workers=8, pin_memory=True, batch_sampler=train_sampler)
-    test_loader  = torch.utils.data.DataLoader( testset,  num_workers=8, pin_memory=True, batch_sampler=test_sampler)
+    train_loader = torch.utils.data.DataLoader( trainset, num_workers=16, pin_memory=True, batch_sampler=train_sampler)
+    test_loader  = torch.utils.data.DataLoader( testset,  num_workers=16, pin_memory=True, batch_sampler=test_sampler)
 
     train_iterator = iter(train_loader)
     test_iterator  = iter(test_loader)
