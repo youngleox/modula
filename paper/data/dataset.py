@@ -62,6 +62,18 @@ def getDataset(dataset):
 
         return trainset, testset, vocab_size, None
 
+    elif dataset == 'tinystories':
+        
+        if not os.path.exists('data/tinystories/train.bin'):
+            subprocess.call(['python', 'data/tinystories.py'])
+
+        trainset = np.memmap('data/tinystories/train.bin', dtype=np.uint16, mode='r')
+        testset  = np.memmap('data/tinystories/val.bin',   dtype=np.uint16, mode='r')
+
+        vocab_size = 50257
+
+        return trainset, testset, vocab_size, None
+
     else:
         
         raise ValueError(f"Unknown dataset: {dataset}")
@@ -84,7 +96,7 @@ def getIterator(dataset, device, batch_size, context=None):
 
         _getBatch = lambda train: next(train_iterator if train else test_iterator)
 
-    elif dataset in ['shakespeare', 'openwebtext']:
+    elif dataset in ['shakespeare', 'openwebtext', 'tinystories']:
 
         def _getBatch(train):
             data = trainset if train else testset

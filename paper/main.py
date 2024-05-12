@@ -11,12 +11,13 @@ from tqdm import trange
 from data.dataset import getIterator
 from modula.compound import *
 
-from misc import check_bfloat16_support
+from misc import check_bfloat16_support, Scheduler
 
 architectures = ['resmlp', 'rescnn', 'gpt']
-datasets      = ['cifar10', 'shakespeare', 'openwebtext']
+datasets      = ['cifar10', 'shakespeare', 'openwebtext', 'tinystories']
 losses        = ['mse', 'xent']
 dtype         = ['bfloat16', 'float32', 'auto']
+scheduler     = ["linear", "cosine", "none"]
 
 parser = argparse.ArgumentParser()
 
@@ -47,6 +48,9 @@ parser.add_argument('--lr',             type=float, default=0.5  )
 parser.add_argument('--beta1',          type=float, default=0.9  )
 parser.add_argument('--beta2',          type=float, default=0.99 )
 parser.add_argument('--wd',             type=float, default=0.01 )
+parser.add_argument('--scheduler',      type=str,   default="linear", choices=scheduler)
+parser.add_argument('--min_lr_factor',  type=float, default=0.0  )
+
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -168,7 +172,7 @@ if __name__ == '__main__':
 
             update.zero_nans()
 
-            schedule = 1 - step / args.train_steps
+            schedule = Scheduler.get_lr(args.scheduler, step, args.train_steps, args.min_lr_factor)
 
             if args.normalize:
                 net.normalize(update, target_norm = args.lr * schedule)
