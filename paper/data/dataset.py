@@ -1,7 +1,6 @@
 import os
 import subprocess
 import pickle
-import requests
 import numpy as np
 import torch
 
