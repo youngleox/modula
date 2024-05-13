@@ -15,9 +15,10 @@ WIDTHS=(32 64 128 256 512 1024)
 DEPTH=3
 
 for WIDTH in ${WIDTHS[@]}; do
-     GPU=1
+     GPU=0
      for LR in ${LRS[@]}; do
           TAG=$1/$2/$3/$4/$WIDTH/$DEPTH/$LR
+          echo running $TAG
           mkdir -p logs/$TAG
           git archive -o logs/$TAG/code.zip HEAD
           export CUDA_VISIBLE_DEVICES=$GPU
@@ -32,9 +33,10 @@ DEPTHS=(2 4 8 16 32 64)
 WIDTH=128
 
 for DEPTH in ${DEPTHS[@]}; do
-     GPU=1
+     GPU=0
      for LR in ${LRS[@]}; do
           TAG=$1/$2/$3/$4/$WIDTH/$DEPTH/$LR
+          echo running $TAG
           mkdir -p logs/$TAG
           git archive -o logs/$TAG/code.zip HEAD
           export CUDA_VISIBLE_DEVICES=$GPU
