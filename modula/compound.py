@@ -40,7 +40,7 @@ def Attention(num_heads, d_embed, d_query, d_value, context, causal):
     return W @ FunctionalAttention(causal) * 1/3 @ (Q, K, V)
 
 
-def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
+def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks, blocks_mass=5):
     """GPT."""
     token_embedding = Embedding(vocab_size, d_embed)
     position_embedding = Embedding(context, d_embed) @ Enumerate()
@@ -52,7 +52,7 @@ def GPT(vocab_size, context, num_heads, d_embed, d_query, d_value, num_blocks):
     attention_block = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * attention
     mlp_block       = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * mlp
     blocks = (mlp_block @ attention_block) ** num_blocks
-    blocks.tare()
+    blocks.tare(absolute=blocks_mass)
 
     final = Linear(vocab_size, d_embed) @ LayerNorm()
 
