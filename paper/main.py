@@ -13,7 +13,8 @@ from modula.compound import *
 
 from misc import check_bfloat16_support, Scheduler
 
-architectures = ['resmlp', 'rescnn', 'gpt']
+architectures = ['resmlp', 'rescnn', 'gpt', 'pythia', 'resmlp2','vit']
+layers        = ['naw', 'nwa', 'j', 'wa', 'aw']
 datasets      = ['cifar10', 'shakespeare', 'openwebtext', 'tinystories']
 losses        = ['mse', 'xent']
 dtype         = ['bfloat16', 'float32', 'auto']
@@ -25,19 +26,29 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--cpu',            action='store_true'      )
 parser.add_argument('--distribute',     action='store_true'      )
 parser.add_argument('--log_dir',        type=str,   default='logs/temp')
-parser.add_argument('--log_interval',   type=int,   default=100  )
+parser.add_argument('--log_interval',   type=int,   default=1000 )
 parser.add_argument('--seed',           type=int,   default=0    )
 parser.add_argument('--batch_size',     type=int,   default=128  )
-parser.add_argument('--train_steps',    type=int,   default=1000 )
-parser.add_argument('--test_steps',     type=int,   default=100  )
+parser.add_argument('--train_steps',    type=int,   default=10000 )
+parser.add_argument('--test_steps',     type=int,   default=1000  )
 parser.add_argument('--dataset',        type=str,   default='cifar10',  choices=datasets)
 parser.add_argument('--dtype',          type=str,   default='float32',  choices=dtype)
 
 # architecture
-parser.add_argument('--arch',           type=str,   default='resmlp',   choices=architectures)
-parser.add_argument('--depth',          type=int,   default=6    )
-parser.add_argument('--block_depth',    type=int,   default=2    )
-parser.add_argument('--width',          type=int,   default=384  )
+parser.add_argument('--arch',           type=str,   default='resmlp2',   choices=architectures)
+parser.add_argument('--layer',          type=str,   default='naw',   choices=layers)
+# width
+parser.add_argument('--width',          type=int,   default=64   )
+# depths
+parser.add_argument('--depth',          type=int,   default=4    )
+parser.add_argument('--initial_depth',  type=int,   default=1    )
+parser.add_argument('--block_depth',    type=int,   default=1    )
+parser.add_argument('--final_depth',    type=int,   default=1    )
+# masses
+parser.add_argument('--initial_mass',   type=float, default=1.0  )
+parser.add_argument('--body_mass',      type=float, default=1.0  )
+parser.add_argument('--final_mass',     type=float, default=1.0  )
+# for transformers
 parser.add_argument('--context',        type=int,   default=256  )
 parser.add_argument('--num_heads',      type=int,   default=8    )
 
@@ -47,8 +58,8 @@ parser.add_argument('--loss',           type=str,   default='xent',     choices=
 parser.add_argument('--lr',             type=float, default=0.5  )
 parser.add_argument('--beta1',          type=float, default=0.9  )
 parser.add_argument('--beta2',          type=float, default=0.99 )
-parser.add_argument('--wd',             type=float, default=0.01 )
-parser.add_argument('--scheduler',      type=str,   default="linear", choices=scheduler)
+parser.add_argument('--wd',             type=float, default=0.00 )
+parser.add_argument('--scheduler',      type=str,   default="cosine", choices=scheduler)
 parser.add_argument('--min_lr_factor',  type=float, default=0.0  )
 
 
@@ -58,7 +69,7 @@ def set_seed(seed):
 
 def evalute(output, data, target):
 
-    if args.arch == "gpt":
+    if args.arch == "gpt" or args.arch == "pythia":
         output = output.view(-1, output.size(-1))
         target = target.view(-1)
 
@@ -107,7 +118,14 @@ if __name__ == '__main__':
 
     if args.arch == "resmlp":
         net = ResMLP(args.width, args.depth, args.block_depth, math.prod(input_dim), output_dim)
-
+    
+    elif args.arch == "resmlp2":
+        net = ResMLP2(math.prod(input_dim), output_dim,
+                     args.width, args.depth, 
+                     args.block_depth, args.initial_depth, args.final_depth,
+                     args.body_mass, args.initial_mass, args.final_mass,
+                     args.layer)
+        #print(net.parameters())
     elif args.arch == "rescnn":
         net = ResCNN(args.width, args.depth, args.block_depth, input_dim[0], output_dim)
 
@@ -119,7 +137,26 @@ if __name__ == '__main__':
                     d_query = args.width // args.num_heads,
                     d_value = args.width // args.num_heads,
                     num_blocks = args.depth )
+    elif args.arch == "pythia":
+        net = Pythia(  vocab_size = input_dim,
+                    context = args.context,
+                    num_heads = args.num_heads,
+                    d_embed = args.width,
+                    d_query = args.width // args.num_heads,
+                    d_value = args.width // args.num_heads,
+                    num_blocks = args.depth )
 
+    elif args.arch == "vit":
+        net = ViT(  image_size = input_dim[1],
+                    patch_size = 4,
+                    output_dim = output_dim,
+                    num_heads = args.num_heads,
+                    d_embed = args.width,
+                    d_query = args.width // args.num_heads,
+                    d_value = args.width // args.num_heads,
+                    num_blocks = args.depth,
+                    body_mass = args.body_mass)
+        
     if rank == 0: print(net)
 
     if args.dtype == 'auto':
@@ -132,7 +169,8 @@ if __name__ == '__main__':
     set_seed(args.seed)
     weights = net.initialize(device=device, dtype=dtype)
     set_seed(args.seed + rank)
-
+    for w in weights:
+        print(w.shape)
     with torch.no_grad():
         mom1 = 0 * weights
         if args.beta2 >= 0:

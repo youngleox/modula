@@ -7,3 +7,5 @@ paper/figure/.ipynb_checkpoints/
 __pycache__/
 */__pycache__/
 .DS_Store
+data/*
+*.pickle
