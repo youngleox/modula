@@ -9,7 +9,8 @@ class Module:
         self.sensitivity = None
         self.length = None
         self.children = []
-        
+        self.training = True
+
     def forward(self, x, w):
         raise NotImplementedError
 
@@ -29,6 +30,16 @@ class Module:
                 child.tare(relative = relative)
         else:
             self.tare(relative = absolute / self.mass)
+
+    def train(self):
+        self.training = True
+        for child in self.children:
+            child.train()
+    
+    def eval(self):
+        self.training = False
+        for child in self.children:
+            child.eval()
 
     def print_submodules(self):
         for child in self.children:

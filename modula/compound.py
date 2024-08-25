@@ -131,21 +131,29 @@ def ViT(image_size, patch_size, output_dim, num_heads, d_embed, d_query, d_value
 
     n_token = (image_size // patch_size) ** 2
     d_patch = (patch_size)**2*3
+
+    # construct embeddings
     img_patch = PatchifyImage(patch_size,image_size)
     img_token = Linear(d_embed,d_patch) @ img_patch
     cls_token = Embedding(1, d_embed) @ Enumerate(1) @ img_patch
+
     token_embedding = AddCLS() @ (cls_token, img_token)
     position_embedding = Embedding(n_token+1, d_embed) @ Enumerate(n_token+1) @ img_patch
+
     initial = 1/2 * token_embedding + 1/2 * position_embedding
     initial.tare()
 
+    # construct blocks
     attention = Attention(num_heads, d_embed, d_query, d_value, n_token+1, causal=False) @ LayerNorm()
     mlp = Linear(d_embed, 4*d_embed) @ ScaledGELU() @ Linear(4*d_embed, d_embed) @ LayerNorm()
+
     attention_block = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * attention
     mlp_block       = (1-1/(2*num_blocks)) * Identity() + 1/(2*num_blocks) * mlp
+
     blocks = (mlp_block @ attention_block) ** num_blocks
     blocks.tare(absolute=body_mass)
 
+    # construct final layer
     final = Linear(output_dim, d_embed) @ LayerNorm() @ Flatten() @ Permute() @ ExtractCLS()
 
     return final @ blocks @ initial

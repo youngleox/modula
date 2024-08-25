@@ -269,7 +269,7 @@ class AddCLS(Bond):
     """Adds CLS token(s) via concatination. (b, n, w) -> (b, n+len(cls), d)"""
     def __init__(self, dim = 1):
         super().__init__()
-        self.sensitivity = 1
+        self.sensitivity = 1/2
         self.dim = dim
 
     def forward(self, x, w):

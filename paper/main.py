@@ -51,6 +51,7 @@ parser.add_argument('--final_mass',     type=float, default=1.0  )
 # for transformers
 parser.add_argument('--context',        type=int,   default=256  )
 parser.add_argument('--num_heads',      type=int,   default=8    )
+parser.add_argument('--patch_size',     type=int,   default=4    )
 
 # training
 parser.add_argument('--normalize',      type=int,   default=1     ,     choices=[0,1])
@@ -148,7 +149,7 @@ if __name__ == '__main__':
 
     elif args.arch == "vit":
         net = ViT(  image_size = input_dim[1],
-                    patch_size = 4,
+                    patch_size = args.patch_size,
                     output_dim = output_dim,
                     num_heads = args.num_heads,
                     d_embed = args.width,
@@ -169,8 +170,8 @@ if __name__ == '__main__':
     set_seed(args.seed)
     weights = net.initialize(device=device, dtype=dtype)
     set_seed(args.seed + rank)
-    for w in weights:
-        print(w.shape)
+    #for w in weights:
+        #print(w.shape)
     with torch.no_grad():
         mom1 = 0 * weights
         if args.beta2 >= 0:
